@@ -34,3 +34,6 @@
 # Symbol/intermediate files
 *.pdb
 *.ilk
+
+# VS Code stuff
+.vs/
