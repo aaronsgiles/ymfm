@@ -665,7 +665,7 @@ public:
 
 protected:
 	// internal state
-	uint8_t m_address;               // address register
+	uint16_t m_address;              // address register
 	fm_engine m_fm;                  // core FM engine
 };
 
