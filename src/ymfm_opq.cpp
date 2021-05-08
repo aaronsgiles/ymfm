@@ -354,6 +354,8 @@ std::string opq_registers::log_keyon(uint32_t choffs, uint32_t opoffs)
 ym3806::ym3806(ymfm_interface &intf) :
 	m_fm(intf)
 {
+	// initialize the state
+	reset();
 }
 
 

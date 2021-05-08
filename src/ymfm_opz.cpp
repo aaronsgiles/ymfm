@@ -547,6 +547,8 @@ ym2414::ym2414(ymfm_interface &intf) :
 	m_address(0),
 	m_fm(intf)
 {
+	// initialize the state
+	reset();
 }
 
 
