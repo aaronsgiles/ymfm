@@ -981,7 +981,7 @@ void generate_all(std::vector<uint8_t> &buffer, uint32_t data_start, uint32_t ou
 
 			// AY8910, write value dd to register aa
 			case 0xa0:
-				write_chip(CHIP_YM2149, 0, buffer[offset], buffer[offset + 1]);
+				write_chip(CHIP_YM2149, buffer[offset] >> 7, buffer[offset] & 0x7f, buffer[offset + 1]);
 				offset += 2;
 				break;
 
