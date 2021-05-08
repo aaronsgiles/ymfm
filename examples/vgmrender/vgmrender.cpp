@@ -103,12 +103,17 @@ public:
 		memcpy(&m_pcm_data[base], src, length);
 	}
 
+	// seek within the PCM stream
+	void seek_pcm(uint32_t pos) { m_pcm_offset = pos; }
+	uint8_t read_pcm() { return (m_pcm_offset < m_pcm_data.size()) ? m_pcm_data[m_pcm_offset++] : 0; }
+
 protected:
 	// internal state
 	chip_type m_type;
 	std::vector<uint8_t> m_adpcm_a_data;
 	std::vector<uint8_t> m_adpcm_b_data;
 	std::vector<uint8_t> m_pcm_data;
+	uint32_t m_pcm_offset;
 };
 
 
@@ -869,11 +874,9 @@ void generate_all(std::vector<uint8_t> &buffer, uint32_t data_start, uint32_t ou
 				uint32_t size = parse_uint32(buffer, offset);
 				uint32_t start, length;
 				uint32_t localoffset = offset;
-				vgm_chip_base *chip;
 
 				switch (type)
 				{
-					case 0x00: // YM2612 PCM data for use with associated commands
 					case 0x01: // RF5C68 PCM data for use with associated commands
 					case 0x02: // RF5C164 PCM data for use with associated commands
 					case 0x03: // PWM PCM data for use with associated commands
@@ -883,12 +886,20 @@ void generate_all(std::vector<uint8_t> &buffer, uint32_t data_start, uint32_t ou
 					case 0x07: // NES APU DPCM data for use with associated commands
 						break;
 
+					case 0x00: // YM2612 PCM data for use with associated commands
+					{
+						vgm_chip_base *chip = find_chip(CHIP_YM2612, 0);
+						if (chip != nullptr)
+							chip->write_pcm(0, size - 8, &buffer[localoffset]);
+						break;
+					}
+
 					case 0x82: // YM2610 ADPCM ROM data
 						length = parse_uint32(buffer, localoffset);
 						start = parse_uint32(buffer, localoffset);
 						for (int index = 0; index < 2; index++)
 						{
-							chip = find_chip(CHIP_YM2610, index);
+							vgm_chip_base *chip = find_chip(CHIP_YM2610, index);
 							if (chip != nullptr)
 								chip->write_adpcm_a(start, size - 8, &buffer[localoffset]);
 						}
@@ -899,7 +910,7 @@ void generate_all(std::vector<uint8_t> &buffer, uint32_t data_start, uint32_t ou
 						start = parse_uint32(buffer, localoffset);
 						for (int index = 0; index < 2; index++)
 						{
-							chip = find_chip(CHIP_YM2608, index);
+							vgm_chip_base *chip = find_chip(CHIP_YM2608, index);
 							if (chip != nullptr)
 								chip->write_adpcm_b(start, size - 8, &buffer[localoffset]);
 						}
@@ -910,7 +921,7 @@ void generate_all(std::vector<uint8_t> &buffer, uint32_t data_start, uint32_t ou
 						start = parse_uint32(buffer, localoffset);
 						for (int index = 0; index < 2; index++)
 						{
-							chip = find_chip(CHIP_YM2610, index);
+							vgm_chip_base *chip = find_chip(CHIP_YM2610, index);
 							if (chip != nullptr)
 								chip->write_adpcm_b(start, size - 8, &buffer[localoffset]);
 						}
@@ -921,7 +932,7 @@ void generate_all(std::vector<uint8_t> &buffer, uint32_t data_start, uint32_t ou
 						start = parse_uint32(buffer, localoffset);
 						for (int index = 0; index < 2; index++)
 						{
-							chip = find_chip(CHIP_Y8950, index);
+							vgm_chip_base *chip = find_chip(CHIP_Y8950, index);
 							if (chip != nullptr)
 								chip->write_adpcm_b(start, size - 8, &buffer[localoffset]);
 						}
@@ -979,6 +990,16 @@ void generate_all(std::vector<uint8_t> &buffer, uint32_t data_start, uint32_t ou
 				delay = (cmd & 15) + 1;
 				break;
 
+			case 0x80:	case 0x81:	case 0x82:	case 0x83:	case 0x84:	case 0x85:	case 0x86:	case 0x87:
+			case 0x88:	case 0x89:	case 0x8a:	case 0x8b:	case 0x8c:	case 0x8d:	case 0x8e:	case 0x8f:
+			{
+				vgm_chip_base *chip = find_chip(CHIP_YM2612, 0);
+				if (chip != nullptr)
+					chip->write(0x2a, chip->read_pcm());
+				delay = cmd & 15;
+				break;
+			}
+
 			// ignored, consume one byte
 			case 0x30:	case 0x31:	case 0x32:	case 0x33:	case 0x34:	case 0x35:	case 0x36:	case 0x37:
 			case 0x38:	case 0x39:	case 0x3a:	case 0x3b:	case 0x3c:	case 0x3d:	case 0x3e:	case 0x3f:
@@ -1034,9 +1055,14 @@ void generate_all(std::vector<uint8_t> &buffer, uint32_t data_start, uint32_t ou
 
 			// ignored, consume four bytes
 			case 0xe0:	// dddddddd: Seek to offset dddddddd (Intel byte order) in PCM data bank of data block type 0 (YM2612).
-				printf("E0: YM2612 PCMseen\n");
+			{
+				vgm_chip_base *chip = find_chip(CHIP_YM2612, 0);
+				uint32_t pos = parse_uint32(buffer, offset);
+				if (chip != nullptr)
+					chip->seek_pcm(pos);
 				offset += 4;
 				break;
+			}
 			case 0xe1:	// mmll aadd: C352, write value aadd to register mmll
 			case 0xe2:	case 0xe3:	case 0xe4:	case 0xe5:	case 0xe6:	case 0xe7:
 			case 0xe8:	case 0xe9:	case 0xea:	case 0xeb:	case 0xec:	case 0xed:	case 0xee:	case 0xef:
