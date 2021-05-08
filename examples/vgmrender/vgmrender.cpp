@@ -1,21 +1,24 @@
 //
-// Simple vgm renderer. It does not currently support compressed VGM files
-// (which most are), so use 7-zip to decompress them to raw form.
+// Simple vgm renderer.
+//
+// Leverages em_inflate tiny inflater from https://github.com/emmanuel-marty/em_inflate
 //
 // Compile with:
 //
-//   g++ --std=c++17 -I../../src vgmrender.cpp ../../src/ymfm_opl.cpp ../../src/ymfm_opm.cpp ../../src/ymfm_opn.cpp ../../src/ymfm_adpcm.cpp ../../src/ymfm_ssg.cpp -o vgmrender.exe
+//   g++ --std=c++17 -I../../src vgmrender.cpp em_inflate.c ../../src/ymfm_opl.cpp ../../src/ymfm_opm.cpp ../../src/ymfm_opn.cpp ../../src/ymfm_adpcm.cpp ../../src/ymfm_ssg.cpp -o vgmrender.exe
 //
 // or:
 //
-//   cl -I..\..\src vgmrender.cpp ..\..\src\ymfm_opl.cpp ..\..\src\ymfm_opm.cpp ..\..\src\ymfm_opn.cpp ..\..\src\ymfm_adpcm.cpp ..\..\src\ymfm_ssg.cpp /Od /Zi /std:c++17 /EHsc
+//   cl -I..\..\src vgmrender.cpp em_inflate.c ..\..\src\ymfm_opl.cpp ..\..\src\ymfm_opm.cpp ..\..\src\ymfm_opn.cpp ..\..\src\ymfm_adpcm.cpp ..\..\src\ymfm_ssg.cpp /Od /Zi /std:c++17 /EHsc
 //
 
+#include <cmath>
 #include <cstdio>
 #include <cstdint>
 #include <cstring>
 #include <list>
 
+#include "em_inflate.h"
 #include "ymfm_opl.h"
 #include "ymfm_opm.h"
 #include "ymfm_opn.h"
@@ -194,6 +197,7 @@ class vgm_chip_ssg : public vgm_chip<ChipType>
 {
 	using parent = vgm_chip<ChipType>;
 	using parent::m_chip;
+	using parent::m_clock;
 
 public:
 	// construction
@@ -1264,6 +1268,31 @@ int main(int argc, char *argv[])
 		return 3;
 	}
 	fclose(file);
+
+	// check for gzip-format
+	if (buffer.size() >= 10 && buffer[0] == 0x1f && buffer[1] == 0x8b && buffer[2] == 0x08)
+	{
+		// copy the raw data to a new buffer
+		std::vector<uint8_t> compressed = buffer;
+
+		// determine uncompressed size and resize the buffer
+		uint8_t *end = &compressed[compressed.size()];
+		uint32_t uncompressed = end[-4] | (end[-3] << 8) | (end[-2] << 16) | (end[-1] << 24);
+		if (size < compressed.size() || size > 32*1024*1024)
+		{
+			fprintf(stderr, "File '%s' appears to be a compressed file but has unexpected size of %d\n", filename, size);
+			return 4;
+		}
+		buffer.resize(uncompressed);
+
+		// decompress the data
+		auto result = em_inflate(&compressed[0], compressed.size(), &buffer[0], buffer.size());
+		if (result == -1)
+		{
+			fprintf(stderr, "Error decompressing data from file\n");
+			return 4;
+		}
+	}
 
 	// check the ID
 	uint32_t offset = 0;
