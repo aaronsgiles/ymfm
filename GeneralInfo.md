@@ -172,12 +172,12 @@ So essentially, later chips make the user do the conversion from note value to p
 
 Internally, this is abstracted away into a 'block_freq' value, which is a 16-bit value containing the block and frequency info concatenated together as follows:
 
-* OPM:  [3-bit block]:[4-bit keycode]:[6-bit fraction] = 13 bits total
+* OPM:  `[3-bit block]:[4-bit keycode]:[6-bit fraction] = 13 bits total`
 
-* OPZ:  [3-bit block]:[12-bit fnum]     = 15 bits total
-* OPN:  [3-bit block]:[11-bit fnum] 0   = 15 bits total
-* OPL:  [3-bit block]:[10-bit fnum]:00  = 15 bits total
-* OPLL: [3-bit block]:[ 9-bit fnum]:000 = 15 bits total
+* OPZ:  `[3-bit block]:[12-bit fnum]     = 15 bits total`
+* OPN:  `[3-bit block]:[11-bit fnum] 0   = 15 bits total`
+* OPL:  `[3-bit block]:[10-bit fnum]:00  = 15 bits total`
+* OPLL: `[3-bit block]:[ 9-bit fnum]:000 = 15 bits total`
 
 The register classes handle the raw format directly and convert it into a phase increment which can be used by the generic engine.
 
@@ -200,23 +200,23 @@ For OPL, the LFO is simplified again, with AM and PM running at fixed frequencie
 
 The table below provides some high level functional differences between the differnet families:
 
-subfamily:   |   OPM  ||   OPN  |  OPNA  ||   OPL  |  OPL2  |  OPLL  |  OPL3  |
--------------|--------||--------|--------||--------|--------|--------|--------|
-outputs:     |    2   ||    1   |    2   ||    1   |    1   |    1   |    4   |
-channels:    |    8   ||    3   |    6   ||    9   |    9   |    9   |   18   |
-operators:   |   32   ||   12   |   24   ||   18   |   18   |   18   |   36   |
-waveforms:   |    1   ||    1   |    1   ||    1   |    4   |    2   |    8   |
-instruments: |   no   ||   no   |   no   ||   yes  |   yes  |   yes  |   yes  |
-ryhthm:      |   no   ||   no   |   no   ||   no   |   no   |   yes  |   no   |
-dynamic ops: |   no   ||   no   |   no   ||   no   |   no   |   no   |   yes  |
-prescale:    |    2   ||  2/3/6 |  2/3/6 ||    4   |    4   |    4   |    8   |
-EG divider:  |    3   ||    3   |    3   ||    1   |    1   |    1   |    1   |
-EG DP:       |   no   ||   no   |   no   ||   no   |   no   |   yes  |   no   |
-EG SSG:      |   no   ||   yes  |   yes  ||   no   |   no   |   no   |   no   |
-mod delay:   |   no   ||   no   |   no   ||   yes  |   yes  |   yes? |   no   |
-CSM:         |   yes  ||  ch 2  |  ch 2  ||   yes  |   yes  |   yes  |   no   |
-LFO:         |   yes  ||   no   |   yes  ||   yes  |   yes  |   yes  |   yes  |
-noise:       |   yes  ||   no   |   no   ||   no   |   no   |   no   |   no   |
+subfamily:   |   OPM  |   OPN  |  OPNA  |   OPL  |  OPL2  |  OPLL  |  OPL3  |
+------------:|:------:|:------:|:------:|:------:|:------:|:------:|:------:|
+outputs:     |    2   |    1   |    2   |    1   |    1   |    1   |    4   |
+channels:    |    8   |    3   |    6   |    9   |    9   |    9   |   18   |
+operators:   |   32   |   12   |   24   |   18   |   18   |   18   |   36   |
+waveforms:   |    1   |    1   |    1   |    1   |    4   |    2   |    8   |
+instruments: |   no   |   no   |   no   |   yes  |   yes  |   yes  |   yes  |
+ryhthm:      |   no   |   no   |   no   |   no   |   no   |   yes  |   no   |
+dynamic ops: |   no   |   no   |   no   |   no   |   no   |   no   |   yes  |
+prescale:    |    2   |  2/3/6 |  2/3/6 |    4   |    4   |    4   |    8   |
+EG divider:  |    3   |    3   |    3   |    1   |    1   |    1   |    1   |
+EG DP:       |   no   |   no   |   no   |   no   |   no   |   yes  |   no   |
+EG SSG:      |   no   |   yes  |   yes  |   no   |   no   |   no   |   no   |
+mod delay:   |   no   |   no   |   no   |   yes  |   yes  |   yes? |   no   |
+CSM:         |   yes  |  ch 2  |  ch 2  |   yes  |   yes  |   yes  |   no   |
+LFO:         |   yes  |   no   |   yes  |   yes  |   yes  |   yes  |   yes  |
+noise:       |   yes  |   no   |   no   |   no   |   no   |   no   |   no   |
 
 * Outputs represents the number of output channels: 1=mono, 2=stereo, 4=stereo+.
 * Channels represents the number of independent FM channels.
@@ -261,15 +261,15 @@ summing:  |  adder |  adder |  adder |  adder |  adder  |  muxer |  muxer |  add
 
 OPL has a similar trove of chip variants:
 
-chip ID:     | YM3526 |  Y8950  || YM3812 || YM2413 || YMF262 || YMF278B |
--------------|--------|---------||--------||--------||--------||---------|
-aka:         |   OPL  |MSX-AUDIO||  OPL2  ||  OPLL  ||  OPL3  ||   OPL4  |
-FM:          |    9   |    9    ||    9   ||    9   ||   18   ||    18   |
-ADPCM-B:     |    -   |  1 ext  ||    -   ||    -   ||    -   ||    -    |
-wavetable:   |    -   |    -    ||    -   ||    -   ||    -   ||    24   |
-instruments: |   no   |    no   ||   no   ||   yes  ||   no   ||    no   |
-output:      | 10.3fp |  10.3fp || 10.3fp ||  9-bit || 16-bit || 16-bit  |
-summing:     |  adder |  adder  ||  adder ||  muxer ||  adder ||  adder  |
+chip ID:     | YM3526 |  Y8950  | YM3812 | YM2413 | YMF262 | YMF278B |
+------------:|:------:|:-------:|:------:|:------:|:------:|:-------:|
+aka:         |   OPL  |MSX-AUDIO|  OPL2  |  OPLL  |  OPL3  |   OPL4  |
+FM:          |    9   |    9    |    9   |    9   |   18   |    18   |
+ADPCM-B:     |    -   |  1 ext  |    -   |    -   |    -   |    -    |
+wavetable:   |    -   |    -    |    -   |    -   |    -   |    24   |
+instruments: |   no   |    no   |   no   |   yes  |   no   |    no   |
+output:      | 10.3fp |  10.3fp | 10.3fp |  9-bit | 16-bit | 16-bit  |
+summing:     |  adder |  adder  |  adder |  muxer |  adder |  adder  |
 
 * FM represents the number of FM channels available.
 * ADPCM-B represents the number of external ADPCM-B channels present.
