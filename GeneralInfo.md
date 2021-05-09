@@ -234,23 +234,22 @@ noise:       |   yes  ||   no   |   no   ||   no   |   no   |   no   |   no   |
 * LFO indicates whether LFO is supported.
 * Noise indicates whether one of the operators can be replaced with a noise source.
 
-
-CHIP SPECIFICS
+## Chip Specifics
 
 While OPM is its own thing, the OPN and OPL families have quite a few specific
 implementations, with many differing details beyond the core FM parts. Here are
 some details on the OPN family:
 
-chip ID:  | YM2203 || YM2608 | YMF288 || YM2610 | YM2610B || YM2612 | YM3438 | YMF276 |
-----------|--------||--------|--------||--------|---------||--------|--------|--------|
-aka:      |   OPN  ||  OPNA  |  OPN3  ||  OPNB  |  OPNB2  ||  OPN2  |  OPN2C |  OPN2L |
-FM:       |    3   ||    6   |    6   ||    4   |    6    ||    6   |    6   |    6   |
-AY-8910:  |    3   ||    3   |    3   ||    3   |    3    ||    -   |    -   |    -   |
-ADPCM-A:  |    -   ||  6 int |  6 int ||  6 ext |  6 ext  ||    -   |    -   |    -   |
-ADPCM-B:  |    -   ||  1 ext |    -   ||  1 ext |  1 ext  ||    -   |    -   |    -   |
-DAC:      |   no   ||   no   |   no   ||   no   |   no    ||   yes  |   yes  |   yes  |
-output:   | 10.3fp || 16-bit | 16-bit || 16-bit |  16-bit ||  9-bit |  9-bit | 16-bit |
-summing:  |  adder ||  adder |  adder ||  adder |  adder  ||  muxer |  muxer |  adder |
+chip ID:  | YM2203 | YM2608 | YMF288 | YM2610 | YM2610B | YM2612 | YM3438 | YMF276 |
+----------|--------|--------|--------|--------|---------|--------|--------|--------|
+aka:      |   OPN  |  OPNA  |  OPN3  |  OPNB  |  OPNB2  |  OPN2  |  OPN2C |  OPN2L |
+FM:       |    3   |    6   |    6   |    4   |    6    |    6   |    6   |    6   |
+AY-8910:  |    3   |    3   |    3   |    3   |    3    |    -   |    -   |    -   |
+ADPCM-A:  |    -   |  6 int |  6 int |  6 ext |  6 ext  |    -   |    -   |    -   |
+ADPCM-B:  |    -   |  1 ext |    -   |  1 ext |  1 ext  |    -   |    -   |    -   |
+DAC:      |   no   |   no   |   no   |   no   |   no    |   yes  |   yes  |   yes  |
+output:   | 10.3fp | 16-bit | 16-bit | 16-bit |  16-bit |  9-bit |  9-bit | 16-bit |
+summing:  |  adder |  adder |  adder |  adder |  adder  |  muxer |  muxer |  adder |
 
 * FM represents the number of FM channels available.
 * AY-8910 represents the number of AY-8910-compatible channels that are built in.
