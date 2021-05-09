@@ -241,7 +241,7 @@ implementations, with many differing details beyond the core FM parts. Here are
 some details on the OPN family:
 
 chip ID:  | YM2203 | YM2608 | YMF288 | YM2610 | YM2610B | YM2612 | YM3438 | YMF276 |
-----------|--------|--------|--------|--------|---------|--------|--------|--------|
+---------:|:------:|:------:|:------:|:------:|:-------:|:------:|:------:|:------:|
 aka:      |   OPN  |  OPNA  |  OPN3  |  OPNB  |  OPNB2  |  OPN2  |  OPN2C |  OPN2L |
 FM:       |    3   |    6   |    6   |    4   |    6    |    6   |    6   |    6   |
 AY-8910:  |    3   |    3   |    3   |    3   |    3    |    -   |    -   |    -   |
