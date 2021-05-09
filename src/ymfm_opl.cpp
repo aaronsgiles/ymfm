@@ -719,8 +719,6 @@ ym3526::ym3526(ymfm_interface &intf) :
 	m_address(0),
 	m_fm(intf)
 {
-	// initialize the state
-	reset();
 }
 
 
@@ -865,8 +863,6 @@ y8950::y8950(ymfm_interface &intf) :
 	m_fm(intf),
 	m_adpcm_b(intf)
 {
-	// initialize the state
-	reset();
 }
 
 
@@ -1105,8 +1101,6 @@ ym3812::ym3812(ymfm_interface &intf) :
 	m_address(0),
 	m_fm(intf)
 {
-	// initialize the state
-	reset();
 }
 
 
@@ -1249,8 +1243,6 @@ ymf262::ymf262(ymfm_interface &intf) :
 	m_address(0),
 	m_fm(intf)
 {
-	// initialize the state
-	reset();
 }
 
 
@@ -1424,8 +1416,6 @@ ymf278b::ymf278b(ymfm_interface &intf) :
 	m_address(0),
 	m_fm(intf)
 {
-	// initialize the state
-	reset();
 }
 
 
@@ -1602,9 +1592,6 @@ opll_base::opll_base(ymfm_interface &intf, uint8_t const *instrument_data) :
 	m_fm(intf)
 {
 	m_fm.regs().set_instrument_data(instrument_data);
-
-	// initialize the state
-	reset();
 }
 
 

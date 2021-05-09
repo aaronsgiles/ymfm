@@ -440,8 +440,6 @@ ym2149::ym2149(ymfm_interface &intf) :
 	m_address(0),
 	m_ssg(intf)
 {
-	// initialize the state
-	reset();
 }
 
 
@@ -597,8 +595,6 @@ ym2203::ym2203(ymfm_interface &intf) :
 	m_fm(intf),
 	m_ssg(intf)
 {
-	// initialize the state
-	reset();
 }
 
 
@@ -812,8 +808,6 @@ ym2608::ym2608(ymfm_interface &intf) :
 	m_adpcm_a(intf, 0),
 	m_adpcm_b(intf)
 {
-	// initialize the state
-	reset();
 }
 
 
@@ -1198,8 +1192,6 @@ ym2610::ym2610(ymfm_interface &intf, uint8_t channel_mask) :
 	m_adpcm_a(intf, 8),
 	m_adpcm_b(intf, 8)
 {
-	// initialize the state
-	reset();
 }
 
 
@@ -1510,8 +1502,6 @@ ym2612::ym2612(ymfm_interface &intf) :
 	m_dac_enable(0),
 	m_fm(intf)
 {
-	// initialize the state
-	reset();
 }
 
 

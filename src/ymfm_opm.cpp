@@ -404,8 +404,6 @@ ym2151::ym2151(ymfm_interface &intf, opm_variant variant) :
 	m_address(0),
 	m_fm(intf)
 {
-	// initialize the state
-	reset();
 }
 
 

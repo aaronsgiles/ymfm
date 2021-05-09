@@ -247,6 +247,7 @@ class ym3806
 public:
 	using fm_engine = fm_engine_base<opq_registers>;
 	static constexpr uint32_t OUTPUTS = fm_engine::OUTPUTS;
+	using output_data = fm_engine::output_data;
 
 	// constructor
 	ym3806(ymfm_interface &intf);
@@ -271,7 +272,7 @@ public:
 	void write(uint32_t offset, uint8_t data);
 
 	// generate one sample of sound
-	void generate(int32_t output[fm_engine::OUTPUTS]);
+	void generate(output_data *output, uint32_t numsamples = 1);
 
 protected:
 	// internal state

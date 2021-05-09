@@ -574,8 +574,6 @@ ym2414::ym2414(ymfm_interface &intf) :
 	m_address(0),
 	m_fm(intf)
 {
-	// initialize the state
-	reset();
 }
 
 
@@ -739,20 +737,20 @@ void ym2414::write(uint32_t offset, uint8_t data)
 //  generate - generate one sample of sound
 //-------------------------------------------------
 
-void ym2414::generate(int32_t output[fm_engine::OUTPUTS])
+void ym2414::generate(output_data *output, uint32_t numsamples)
 {
-	// clock the system
-	m_fm.clock(fm_engine::ALL_CHANNELS);
+	for (uint32_t samp = 0; samp < numsamples; samp++, output++)
+	{
+		// clock the system
+		m_fm.clock(fm_engine::ALL_CHANNELS);
 
-	// update the FM content; YM2414 is full 14-bit with no intermediate clipping
-	for (int index = 0; index < fm_engine::OUTPUTS; index++)
-		output[index] = 0;
-	m_fm.output(output, 0, 32767, fm_engine::ALL_CHANNELS);
+		// update the FM content; YM2414 is full 14-bit with no intermediate clipping
+		output->clear();
+		m_fm.output(*output, 0, 32767, fm_engine::ALL_CHANNELS);
 
-	// convert to 10.3 floating point value for the DAC and back
-	// YM2414 is stereo
-	for (int index = 0; index < fm_engine::OUTPUTS; index++)
-		output[index] = roundtrip_fp(output[index]);
+		// unsure about YM2414 outputs; assume it is like YM2151
+		output->roundtrip_fp();
+	}
 }
 
 }

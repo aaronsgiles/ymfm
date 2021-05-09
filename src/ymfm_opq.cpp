@@ -381,8 +381,6 @@ std::string opq_registers::log_keyon(uint32_t choffs, uint32_t opoffs)
 ym3806::ym3806(ymfm_interface &intf) :
 	m_fm(intf)
 {
-	// initialize the state
-	reset();
 }
 
 
@@ -457,20 +455,21 @@ void ym3806::write(uint32_t offset, uint8_t data)
 //  generate - generate one sample of sound
 //-------------------------------------------------
 
-void ym3806::generate(int32_t output[fm_engine::OUTPUTS])
+void ym3806::generate(output_data *output, uint32_t numsamples)
 {
-	// clock the system
-	m_fm.clock(fm_engine::ALL_CHANNELS);
+	for (uint32_t samp = 0; samp < numsamples; samp++, output++)
+	{
+		// clock the system
+		m_fm.clock(fm_engine::ALL_CHANNELS);
 
-	// update the FM content; YM3806 is full 14-bit with no intermediate clipping
-	for (int index = 0; index < fm_engine::OUTPUTS; index++)
-		output[index] = 0;
-	m_fm.output(output, 0, 32767, fm_engine::ALL_CHANNELS);
+		// update the FM content; YM3806 is full 14-bit with no intermediate clipping
+		output->clear();
+		m_fm.output(*output, 0, 32767, fm_engine::ALL_CHANNELS);
 
-	// convert to 10.3 floating point value for the DAC and back
-	// YM3806 is stereo
-	for (int index = 0; index < fm_engine::OUTPUTS; index++)
-		output[index] = roundtrip_fp(output[index]);
+		// YM3608 appears to go through a YM3012 DAC, which means we want to apply
+		// the FP truncation logic to the outputs
+		output->roundtrip_fp();
+	}
 }
 
 }
