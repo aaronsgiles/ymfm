@@ -34,6 +34,7 @@
 #pragma once
 
 #include "ymfm.h"
+#include "ymfm_fm.h"
 
 namespace ymfm
 {

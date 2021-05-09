@@ -35,6 +35,7 @@
 
 #include "ymfm.h"
 #include "ymfm_adpcm.h"
+#include "ymfm_fm.h"
 #include "ymfm_ssg.h"
 
 namespace ymfm
