@@ -200,39 +200,39 @@ For OPL, the LFO is simplified again, with AM and PM running at fixed frequencie
 
 The table below provides some high level functional differences between the differnet families:
 
-  subfamily: |   OPM  ||   OPN  |  OPNA  ||   OPL  |  OPL2  |  OPLL  |  OPL3  |
+subfamily:   |   OPM  ||   OPN  |  OPNA  ||   OPL  |  OPL2  |  OPLL  |  OPL3  |
 -------------|--------||--------|--------||--------|--------|--------|--------|
-    outputs: |    2   ||    1   |    2   ||    1   |    1   |    1   |    4   |
-   channels: |    8   ||    3   |    6   ||    9   |    9   |    9   |   18   |
-  operators: |   32   ||   12   |   24   ||   18   |   18   |   18   |   36   |
-  waveforms: |    1   ||    1   |    1   ||    1   |    4   |    2   |    8   |
+outputs:     |    2   ||    1   |    2   ||    1   |    1   |    1   |    4   |
+channels:    |    8   ||    3   |    6   ||    9   |    9   |    9   |   18   |
+operators:   |   32   ||   12   |   24   ||   18   |   18   |   18   |   36   |
+waveforms:   |    1   ||    1   |    1   ||    1   |    4   |    2   |    8   |
 instruments: |   no   ||   no   |   no   ||   yes  |   yes  |   yes  |   yes  |
-     ryhthm: |   no   ||   no   |   no   ||   no   |   no   |   yes  |   no   |
+ryhthm:      |   no   ||   no   |   no   ||   no   |   no   |   yes  |   no   |
 dynamic ops: |   no   ||   no   |   no   ||   no   |   no   |   no   |   yes  |
-   prescale: |    2   ||  2/3/6 |  2/3/6 ||    4   |    4   |    4   |    8   |
- EG divider: |    3   ||    3   |    3   ||    1   |    1   |    1   |    1   |
-      EG DP: |   no   ||   no   |   no   ||   no   |   no   |   yes  |   no   |
-     EG SSG: |   no   ||   yes  |   yes  ||   no   |   no   |   no   |   no   |
-  mod delay: |   no   ||   no   |   no   ||   yes  |   yes  |   yes? |   no   |
-        CSM: |   yes  ||  ch 2  |  ch 2  ||   yes  |   yes  |   yes  |   no   |
-        LFO: |   yes  ||   no   |   yes  ||   yes  |   yes  |   yes  |   yes  |
-      noise: |   yes  ||   no   |   no   ||   no   |   no   |   no   |   no   |
+prescale:    |    2   ||  2/3/6 |  2/3/6 ||    4   |    4   |    4   |    8   |
+EG divider:  |    3   ||    3   |    3   ||    1   |    1   |    1   |    1   |
+EG DP:       |   no   ||   no   |   no   ||   no   |   no   |   yes  |   no   |
+EG SSG:      |   no   ||   yes  |   yes  ||   no   |   no   |   no   |   no   |
+mod delay:   |   no   ||   no   |   no   ||   yes  |   yes  |   yes? |   no   |
+CSM:         |   yes  ||  ch 2  |  ch 2  ||   yes  |   yes  |   yes  |   no   |
+LFO:         |   yes  ||   no   |   yes  ||   yes  |   yes  |   yes  |   yes  |
+noise:       |   yes  ||   no   |   no   ||   no   |   no   |   no   |   no   |
 
-Outputs represents the number of output channels: 1=mono, 2=stereo, 4=stereo+.
-Channels represents the number of independent FM channels.
-Operators represents the number of operators, or "slots" which are assembled into the channels.
-Waveforms represents the number of different sine-derived waveforms available.
-Instruments indicates whether the family has built-in instruments.
-Rhythm indicates whether the family has a built-in rhythm
-Dynamic ops indicates whether it is possible to switch between 2-operator and 4-operator modes dynamically.
-Prescale specifies the default clock divider; some chips allow this to be controlled via register writes.
-EG divider represents the divider applied to the envelope generator clock.
-EG DP indicates whether the envelope generator includes a DP (depress?) phase at the beginning of each key on.
-SSG EG indicates whether the envelope generator has SSG-style support.
-Mod delay indicates whether the connection to the first modulator's input is delayed by 1 sample.
-CSM indicates whether CSM mode is supported, triggered by timer A.
-LFO indicates whether LFO is supported.
-Noise indicates whether one of the operators can be replaced with a noise source.
+* Outputs represents the number of output channels: 1=mono, 2=stereo, 4=stereo+.
+* Channels represents the number of independent FM channels.
+* Operators represents the number of operators, or "slots" which are assembled into the channels.
+* Waveforms represents the number of different sine-derived waveforms available.
+* Instruments indicates whether the family has built-in instruments.
+* Rhythm indicates whether the family has a built-in rhythm
+* Dynamic ops indicates whether it is possible to switch between 2-operator and 4-operator modes dynamically.
+* Prescale specifies the default clock divider; some chips allow this to be controlled via register writes.
+* EG divider represents the divider applied to the envelope generator clock.
+* EG DP indicates whether the envelope generator includes a DP (depress?) phase at the beginning of each key on.
+* SSG EG indicates whether the envelope generator has SSG-style support.
+* Mod delay indicates whether the connection to the first modulator's input is delayed by 1 sample.
+* CSM indicates whether CSM mode is supported, triggered by timer A.
+* LFO indicates whether LFO is supported.
+* Noise indicates whether one of the operators can be replaced with a noise source.
 
 
 CHIP SPECIFICS
@@ -241,44 +241,43 @@ While OPM is its own thing, the OPN and OPL families have quite a few specific
 implementations, with many differing details beyond the core FM parts. Here are
 some details on the OPN family:
 
- chip ID: | YM2203 || YM2608 | YMF288 || YM2610 | YM2610B || YM2612 | YM3438 | YMF276 |
+chip ID:  | YM2203 || YM2608 | YMF288 || YM2610 | YM2610B || YM2612 | YM3438 | YMF276 |
 ----------|--------||--------|--------||--------|---------||--------|--------|--------|
-     aka: |   OPN  ||  OPNA  |  OPN3  ||  OPNB  |  OPNB2  ||  OPN2  |  OPN2C |  OPN2L |
-      FM: |    3   ||    6   |    6   ||    4   |    6    ||    6   |    6   |    6   |
- AY-8910: |    3   ||    3   |    3   ||    3   |    3    ||    -   |    -   |    -   |
- ADPCM-A: |    -   ||  6 int |  6 int ||  6 ext |  6 ext  ||    -   |    -   |    -   |
- ADPCM-B: |    -   ||  1 ext |    -   ||  1 ext |  1 ext  ||    -   |    -   |    -   |
-     DAC: |   no   ||   no   |   no   ||   no   |   no    ||   yes  |   yes  |   yes  |
-  output: | 10.3fp || 16-bit | 16-bit || 16-bit |  16-bit ||  9-bit |  9-bit | 16-bit |
- summing: |  adder ||  adder |  adder ||  adder |  adder  ||  muxer |  muxer |  adder |
+aka:      |   OPN  ||  OPNA  |  OPN3  ||  OPNB  |  OPNB2  ||  OPN2  |  OPN2C |  OPN2L |
+FM:       |    3   ||    6   |    6   ||    4   |    6    ||    6   |    6   |    6   |
+AY-8910:  |    3   ||    3   |    3   ||    3   |    3    ||    -   |    -   |    -   |
+ADPCM-A:  |    -   ||  6 int |  6 int ||  6 ext |  6 ext  ||    -   |    -   |    -   |
+ADPCM-B:  |    -   ||  1 ext |    -   ||  1 ext |  1 ext  ||    -   |    -   |    -   |
+DAC:      |   no   ||   no   |   no   ||   no   |   no    ||   yes  |   yes  |   yes  |
+output:   | 10.3fp || 16-bit | 16-bit || 16-bit |  16-bit ||  9-bit |  9-bit | 16-bit |
+summing:  |  adder ||  adder |  adder ||  adder |  adder  ||  muxer |  muxer |  adder |
 
-FM represents the number of FM channels available.
-AY-8910 represents the number of AY-8910-compatible channels that are built in.
-ADPCM-A represents the number of internal/external ADPCM-A channels present.
-ADPCM-B represents the number of internal/external ADPCM-B channels present.
-DAC indicates if a directly-accessible DAC output exists, replacing one channel.
-Output indicates the output format to the final DAC.
-Summing indicates whether channels are added or time divided in the output.
+* FM represents the number of FM channels available.
+* AY-8910 represents the number of AY-8910-compatible channels that are built in.
+* ADPCM-A represents the number of internal/external ADPCM-A channels present.
+* ADPCM-B represents the number of internal/external ADPCM-B channels present.
+* DAC indicates if a directly-accessible DAC output exists, replacing one channel.
+* Output indicates the output format to the final DAC.
+* Summing indicates whether channels are added or time divided in the output.
 
 OPL has a similar trove of chip variants:
 
-    chip ID: | YM3526 |  Y8950  || YM3812 || YM2413 || YMF262 || YMF278B |
+chip ID:     | YM3526 |  Y8950  || YM3812 || YM2413 || YMF262 || YMF278B |
 -------------|--------|---------||--------||--------||--------||---------|
-        aka: |   OPL  |MSX-AUDIO||  OPL2  ||  OPLL  ||  OPL3  ||   OPL4  |
-         FM: |    9   |    9    ||    9   ||    9   ||   18   ||    18   |
-    ADPCM-B: |    -   |  1 ext  ||    -   ||    -   ||    -   ||    -    |
-  wavetable: |    -   |    -    ||    -   ||    -   ||    -   ||    24   |
+aka:         |   OPL  |MSX-AUDIO||  OPL2  ||  OPLL  ||  OPL3  ||   OPL4  |
+FM:          |    9   |    9    ||    9   ||    9   ||   18   ||    18   |
+ADPCM-B:     |    -   |  1 ext  ||    -   ||    -   ||    -   ||    -    |
+wavetable:   |    -   |    -    ||    -   ||    -   ||    -   ||    24   |
 instruments: |   no   |    no   ||   no   ||   yes  ||   no   ||    no   |
-     output: | 10.3fp |  10.3fp || 10.3fp ||  9-bit || 16-bit || 16-bit  |
-    summing: |  adder |  adder  ||  adder ||  muxer ||  adder ||  adder  |
-             +--------+---------++--------++--------++--------++---------+
+output:      | 10.3fp |  10.3fp || 10.3fp ||  9-bit || 16-bit || 16-bit  |
+summing:     |  adder |  adder  ||  adder ||  muxer ||  adder ||  adder  |
 
-FM represents the number of FM channels available.
-ADPCM-B represents the number of external ADPCM-B channels present.
-Wavetable indicates the number of wavetable channels present.
-Instruments indicates that the chip has built-in instrument selection.
-Output indicates the output format to the final DAC.
-Summing indicates whether channels are added or time divided in the output.
+* FM represents the number of FM channels available.
+* ADPCM-B represents the number of external ADPCM-B channels present.
+* Wavetable indicates the number of wavetable channels present.
+* Instruments indicates that the chip has built-in instrument selection.
+* Output indicates the output format to the final DAC.
+* Summing indicates whether channels are added or time divided in the output.
 
 There are several close variants of the YM2413 with different sets of built-in instruments.
 These include the YM2423, YMF281, and DS1001 (aka Konami VRC7).
