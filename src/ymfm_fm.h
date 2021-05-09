@@ -396,6 +396,8 @@ private:
 template<class RegisterType>
 class fm_channel
 {
+	using output_data = ymfm_output<RegisterType::OUTPUTS>;
+
 public:
 	// constructor
 	fm_channel(fm_engine_base<RegisterType> &owner, uint32_t choffs);
@@ -428,13 +430,13 @@ public:
 	void clock(uint32_t env_counter, int32_t lfo_raw_pm);
 
 	// specific 2-operator and 4-operator output handlers
-	void output_2op(int32_t outputs[RegisterType::OUTPUTS], uint32_t rshift, int32_t clipmax) const;
-	void output_4op(int32_t outputs[RegisterType::OUTPUTS], uint32_t rshift, int32_t clipmax) const;
+	void output_2op(output_data &output, uint32_t rshift, int32_t clipmax) const;
+	void output_4op(output_data &output, uint32_t rshift, int32_t clipmax) const;
 
 	// compute the special OPL rhythm channel outputs
-	void output_rhythm_ch6(int32_t outputs[RegisterType::OUTPUTS], uint32_t rshift, int32_t clipmax) const;
-	void output_rhythm_ch7(uint32_t phase_select, int32_t outputs[RegisterType::OUTPUTS], uint32_t rshift, int32_t clipmax) const;
-	void output_rhythm_ch8(uint32_t phase_select, int32_t outputs[RegisterType::OUTPUTS], uint32_t rshift, int32_t clipmax) const;
+	void output_rhythm_ch6(output_data &output, uint32_t rshift, int32_t clipmax) const;
+	void output_rhythm_ch7(uint32_t phase_select, output_data &output, uint32_t rshift, int32_t clipmax) const;
+	void output_rhythm_ch8(uint32_t phase_select, output_data &output, uint32_t rshift, int32_t clipmax) const;
 
 	// are we a 4-operator channel or a 2-operator one?
 	bool is4op() const
@@ -449,16 +451,16 @@ public:
 
 private:
 	// helper to add values to the outputs based on channel enables
-	void add_to_output(uint32_t choffs, int32_t *outputs, int32_t value) const
+	void add_to_output(uint32_t choffs, output_data &output, int32_t value) const
 	{
 		if (RegisterType::OUTPUTS == 1 || m_regs.ch_output_0(choffs))
-			outputs[0] += value;
+			output.data[0] += value;
 		if (RegisterType::OUTPUTS >= 2 && m_regs.ch_output_1(choffs))
-			outputs[1] += value;
+			output.data[1] += value;
 		if (RegisterType::OUTPUTS >= 3 && m_regs.ch_output_2(choffs))
-			outputs[2] += value;
+			output.data[2] += value;
 		if (RegisterType::OUTPUTS >= 4 && m_regs.ch_output_3(choffs))
-			outputs[3] += value;
+			output.data[3] += value;
 	}
 
 	// internal state
@@ -492,6 +494,9 @@ public:
 	static constexpr uint8_t STATUS_BUSY = RegisterType::STATUS_BUSY;
 	static constexpr uint8_t STATUS_IRQ = RegisterType::STATUS_IRQ;
 
+	// expose the correct output class
+	using output_data = ymfm_output<OUTPUTS>;
+
 	// constructor
 	fm_engine_base(ymfm_interface &intf);
 
@@ -505,7 +510,7 @@ public:
 	uint32_t clock(uint32_t chanmask);
 
 	// compute sum of channel outputs
-	void output(int32_t outputs[RegisterType::OUTPUTS], uint32_t rshift, int32_t clipmax, uint32_t chanmask) const;
+	void output(output_data &output, uint32_t rshift, int32_t clipmax, uint32_t chanmask) const;
 
 	// write to the OPN registers
 	void write(uint16_t regnum, uint8_t data);

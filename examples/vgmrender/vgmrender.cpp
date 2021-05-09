@@ -167,9 +167,9 @@ public:
 	virtual void generate(emulated_time output_start, emulated_time output_step, int32_t *buffer) override
 	{
 		for ( ; m_pos <= output_start; m_pos += m_step)
-			m_chip.generate(m_output);
-		*buffer++ += m_output[0];
-		*buffer++ += m_output[ChipType::OUTPUTS > 1 ? 1 : 0];
+			m_chip.generate(&m_output);
+		*buffer++ += m_output.data[0];
+		*buffer++ += m_output.data[ChipType::OUTPUTS > 1 ? 1 : 0];
 	}
 
 protected:
@@ -194,7 +194,7 @@ protected:
 	// internal state
 	ChipType m_chip;
 	uint32_t m_clock;
-	int32_t m_output[ChipType::OUTPUTS];
+	typename ChipType::output_data m_output;
 	emulated_time m_step;
 	emulated_time m_pos;
 	std::vector<std::pair<uint32_t, uint8_t>> m_queue;
@@ -227,10 +227,10 @@ public:
 
 		// generate the SSG
 		for ( ; m_pos_ssg <= output_start; m_pos_ssg += m_step_ssg)
-			m_chip.generate_ssg(m_output_ssg);
-		int32_t sum = m_output_ssg[0];
+			m_chip.generate_ssg(&m_output_ssg);
+		int32_t sum = m_output_ssg.data[0];
 		if (ChipType::SSG_OUTPUTS == 3)
-			sum += m_output_ssg[1] + m_output_ssg[2];
+			sum += m_output_ssg.data[1] + m_output_ssg.data[2];
 		*buffer++ += sum;
 		*buffer++ += sum;
 	}
@@ -245,7 +245,7 @@ protected:
 
 private:
 	// internal state
-	int32_t m_output_ssg[ChipType::SSG_OUTPUTS];
+	typename ChipType::output_data_ssg m_output_ssg;
 	emulated_time m_step_ssg;
 	emulated_time m_pos_ssg;
 };

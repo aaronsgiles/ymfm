@@ -497,6 +497,7 @@ class ym3526
 {
 public:
 	using fm_engine = fm_engine_base<opl_registers>;
+	using output_data = fm_engine::output_data;
 	static constexpr uint32_t OUTPUTS = fm_engine::OUTPUTS;
 
 	// constructor
@@ -521,9 +522,8 @@ public:
 	void write_data(uint8_t data);
 	void write(uint32_t offset, uint8_t data);
 
-	// generate one sample of sound
-	void generate(int32_t output[fm_engine::OUTPUTS]);
-
+	// generate samples of sound
+	void generate(output_data *output, uint32_t numsamples = 1);
 protected:
 	// internal state
 	uint8_t m_address;               // address register
@@ -537,6 +537,7 @@ class y8950
 {
 public:
 	using fm_engine = fm_engine_base<opl_registers>;
+	using output_data = fm_engine::output_data;
 	static constexpr uint32_t OUTPUTS = fm_engine::OUTPUTS;
 
 	static constexpr uint8_t STATUS_ADPCM_B_PLAYING = 0x01;
@@ -567,8 +568,8 @@ public:
 	void write_data(uint8_t data);
 	void write(uint32_t offset, uint8_t data);
 
-	// generate one sample of sound
-	void generate(int32_t output[fm_engine::OUTPUTS]);
+	// generate samples of sound
+	void generate(output_data *output, uint32_t numsamples = 1);
 
 protected:
 	// internal state
@@ -590,6 +591,7 @@ class ym3812
 {
 public:
 	using fm_engine = fm_engine_base<opl2_registers>;
+	using output_data = fm_engine::output_data;
 	static constexpr uint32_t OUTPUTS = fm_engine::OUTPUTS;
 
 	// constructor
@@ -614,8 +616,8 @@ public:
 	void write_data(uint8_t data);
 	void write(uint32_t offset, uint8_t data);
 
-	// generate one sample of sound
-	void generate(int32_t output[fm_engine::OUTPUTS]);
+	// generate samples of sound
+	void generate(output_data *output, uint32_t numsamples = 1);
 
 protected:
 	// internal state
@@ -635,6 +637,7 @@ class ymf262
 {
 public:
 	using fm_engine = fm_engine_base<opl3_registers>;
+	using output_data = fm_engine::output_data;
 	static constexpr uint32_t OUTPUTS = fm_engine::OUTPUTS;
 
 	// constructor
@@ -658,11 +661,57 @@ public:
 	void write_address(uint8_t data);
 	void write_data(uint8_t data);
 	void write_address_hi(uint8_t data);
-	void write_data_hi(uint8_t data);
 	void write(uint32_t offset, uint8_t data);
 
-	// generate one sample of sound
-	void generate(int32_t output[fm_engine::OUTPUTS]);
+	// generate samples of sound
+	void generate(output_data *output, uint32_t numsamples = 1);
+
+protected:
+	// internal state
+	uint16_t m_address;              // address register
+	fm_engine m_fm;                  // core FM engine
+};
+
+
+
+//*********************************************************
+//  OPL4 IMPLEMENTATION CLASSES
+//*********************************************************
+
+// ======================> ymf278b
+
+class ymf278b
+{
+public:
+	using fm_engine = fm_engine_base<opl4_registers>;
+	using output_data = fm_engine::output_data;
+	static constexpr uint32_t OUTPUTS = fm_engine::OUTPUTS;
+
+	// constructor
+	ymf278b(ymfm_interface &intf);
+
+	// reset
+	void reset();
+
+	// save/restore
+	void save_restore(ymfm_saved_state &state);
+
+	// pass-through helpers
+	uint32_t sample_rate(uint32_t input_clock) const { return m_fm.sample_rate(input_clock); }
+	void invalidate_caches() { m_fm.invalidate_caches(); }
+
+	// read access
+	uint8_t read_status();
+	uint8_t read(uint32_t offset);
+
+	// write access
+	void write_address(uint8_t data);
+	void write_data(uint8_t data);
+	void write_address_hi(uint8_t data);
+	void write(uint32_t offset, uint8_t data);
+
+	// generate samples of sound
+	void generate(output_data *output, uint32_t numsamples = 1);
 
 protected:
 	// internal state
@@ -682,6 +731,7 @@ class opll_base
 {
 public:
 	using fm_engine = fm_engine_base<opll_registers>;
+	using output_data = fm_engine::output_data;
 	static constexpr uint32_t OUTPUTS = fm_engine::OUTPUTS;
 
 	// constructor
@@ -709,8 +759,8 @@ public:
 	void write_data(uint8_t data);
 	void write(uint32_t offset, uint8_t data);
 
-	// generate one sample of sound
-	void generate(int32_t output[fm_engine::OUTPUTS]);
+	// generate samples of sound
+	void generate(output_data *output, uint32_t numsamples = 1);
 
 protected:
 	// internal state

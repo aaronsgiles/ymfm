@@ -168,7 +168,7 @@ void ssg_engine::clock()
 //  output - output the current state
 //-------------------------------------------------
 
-void ssg_engine::output(int32_t outputs[OUTPUTS])
+void ssg_engine::output(output_data &output)
 {
 	// volume to amplitude table, taken from MAME's implementation but biased
 	// so that 0 == 0
@@ -223,7 +223,7 @@ void ssg_engine::output(int32_t outputs[OUTPUTS])
 		}
 
 		// convert to amplitude
-		outputs[chan] = s_amplitudes[volume];
+		output.data[chan] = s_amplitudes[volume];
 	}
 }
 

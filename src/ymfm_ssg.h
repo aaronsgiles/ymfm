@@ -149,6 +149,8 @@ public:
 	static constexpr int CHANNELS = ssg_registers::CHANNELS;
 	static constexpr int CLOCK_DIVIDER = 8;
 
+	using output_data = ymfm_output<OUTPUTS>;
+
 	// constructor
 	ssg_engine(ymfm_interface &intf);
 
@@ -165,7 +167,7 @@ public:
 	void clock();
 
 	// compute sum of channel outputs
-	void output(int32_t outputs[ssg_registers::OUTPUTS]);
+	void output(output_data &output);
 
 	// read/write to the SSG registers
 	uint8_t read(uint32_t regnum);

@@ -251,6 +251,7 @@ class ym2151
 {
 public:
 	using fm_engine = fm_engine_base<opm_registers>;
+	using output_data = fm_engine::output_data;
 	static constexpr uint32_t OUTPUTS = fm_engine::OUTPUTS;
 
 	// constructor
@@ -276,7 +277,7 @@ public:
 	void write(uint32_t offset, uint8_t data);
 
 	// generate one sample of sound
-	void generate(int32_t output[fm_engine::OUTPUTS]);
+	void generate(output_data *output, uint32_t numsamples = 1);
 
 protected:
 	// variants

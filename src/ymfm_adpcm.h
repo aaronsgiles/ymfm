@@ -145,7 +145,8 @@ public:
 	bool clock();
 
 	// return the computed output value, with panning applied
-	void output(int32_t outputs[adpcm_a_registers::OUTPUTS]) const;
+	template<int NumOutputs>
+	void output(ymfm_output<NumOutputs> &output) const;
 
 private:
 	// internal state
@@ -167,7 +168,6 @@ private:
 class adpcm_a_engine
 {
 public:
-	static constexpr int OUTPUTS = adpcm_a_registers::OUTPUTS;
 	static constexpr int CHANNELS = adpcm_a_registers::CHANNELS;
 
 	// constructor
@@ -183,7 +183,8 @@ public:
 	uint32_t clock(uint32_t chanmask);
 
 	// compute sum of channel outputs
-	void output(int32_t outputs[adpcm_a_registers::OUTPUTS], uint32_t chanmask);
+	template<int NumOutputs>
+	void output(ymfm_output<NumOutputs> &output, uint32_t chanmask);
 
 	// write to the ADPCM-A registers
 	void write(uint32_t regnum, uint8_t data);
@@ -250,10 +251,7 @@ class adpcm_b_registers
 {
 public:
 	// constants
-	static constexpr uint32_t OUTPUTS = 2;
-	static constexpr uint32_t CHANNELS = 1;
 	static constexpr uint32_t REGISTERS = 0x11;
-	static constexpr uint32_t ALL_CHANNELS = (1 << CHANNELS) - 1;
 
 	// constructor
 	adpcm_b_registers() { }
@@ -324,7 +322,8 @@ public:
 	void clock();
 
 	// return the computed output value, with panning applied
-	void output(int32_t outputs[adpcm_b_registers::OUTPUTS], uint32_t rshift) const;
+	template<int NumOutputs>
+	void output(ymfm_output<NumOutputs> &output, uint32_t rshift) const;
 
 	// return the status register
 	uint8_t status() const { return m_status; }
@@ -369,9 +368,6 @@ private:
 class adpcm_b_engine
 {
 public:
-	static constexpr int OUTPUTS = adpcm_b_registers::OUTPUTS;
-	static constexpr int CHANNELS = adpcm_b_registers::CHANNELS;
-
 	// constructor
 	adpcm_b_engine(ymfm_interface &intf, uint32_t addrshift = 0);
 
@@ -382,19 +378,20 @@ public:
 	void save_restore(ymfm_saved_state &state);
 
 	// master clocking function
-	void clock(uint32_t chanmask);
+	void clock();
 
 	// compute sum of channel outputs
-	void output(int32_t outputs[2], uint32_t rshift, uint32_t chanmask);
+	template<int NumOutputs>
+	void output(ymfm_output<NumOutputs> &output, uint32_t rshift);
 
 	// read from the ADPCM-B registers
-	uint32_t read(uint32_t regnum) { return m_channel[0]->read(regnum); }
+	uint32_t read(uint32_t regnum) { return m_channel->read(regnum); }
 
 	// write to the ADPCM-B registers
 	void write(uint32_t regnum, uint8_t data);
 
 	// status
-	uint8_t status() const { return m_channel[0]->status(); }
+	uint8_t status() const { return m_channel->status(); }
 
 	// return a reference to our interface
 	ymfm_interface &intf() { return m_intf; }
@@ -404,9 +401,9 @@ public:
 
 private:
 	// internal state
-	ymfm_interface &m_intf;                                 // reference to our interface
-	std::unique_ptr<adpcm_b_channel> m_channel[CHANNELS]; // array of channels
-	adpcm_b_registers m_regs;                             // registers
+	ymfm_interface &m_intf;                     // reference to our interface
+	std::unique_ptr<adpcm_b_channel> m_channel; // channel pointer
+	adpcm_b_registers m_regs;                   // registers
 };
 
 }

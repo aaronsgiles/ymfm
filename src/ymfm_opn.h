@@ -268,6 +268,8 @@ class ym2149
 public:
 	static constexpr uint32_t OUTPUTS = ssg_engine::OUTPUTS;
 	static constexpr uint32_t SSG_OUTPUTS = ssg_engine::OUTPUTS;
+	using output_data = ymfm_output<OUTPUTS>;
+	using output_data_ssg = ymfm_output<SSG_OUTPUTS>;
 
 	// constructor
 	ym2149(ymfm_interface &intf);
@@ -295,8 +297,8 @@ public:
 	void write(uint32_t offset, uint8_t data);
 
 	// generate one sample of sound
-	void generate(int32_t output[OUTPUTS]);
-	void generate_ssg(int32_t output[SSG_OUTPUTS]);
+	void generate(output_data *output, uint32_t numsamples = 1);
+	void generate_ssg(output_data_ssg *output, uint32_t numsamples = 1);
 
 protected:
 	// internal state
@@ -318,6 +320,8 @@ public:
 	using fm_engine = fm_engine_base<opn_registers>;
 	static constexpr uint32_t OUTPUTS = fm_engine::OUTPUTS;
 	static constexpr uint32_t SSG_OUTPUTS = ssg_engine::OUTPUTS;
+	using output_data = fm_engine::output_data;
+	using output_data_ssg = ymfm_output<SSG_OUTPUTS>;
 
 	// constructor
 	ym2203(ymfm_interface &intf);
@@ -347,8 +351,8 @@ public:
 	void write(uint32_t offset, uint8_t data);
 
 	// generate one sample of sound
-	void generate(int32_t output[OUTPUTS]);
-	void generate_ssg(int32_t output[SSG_OUTPUTS]);
+	void generate(output_data *output, uint32_t numsamples = 1);
+	void generate_ssg(output_data_ssg *output, uint32_t numsamples = 1);
 
 protected:
 	// internal updates
@@ -379,6 +383,8 @@ public:
 	using fm_engine = fm_engine_base<opna_registers>;
 	static constexpr uint32_t OUTPUTS = fm_engine::OUTPUTS;
 	static constexpr uint32_t SSG_OUTPUTS = 1;
+	using output_data = fm_engine::output_data;
+	using output_data_ssg = ymfm_output<SSG_OUTPUTS>;
 
 	// constructor
 	ym2608(ymfm_interface &intf);
@@ -412,8 +418,8 @@ public:
 	void write(uint32_t offset, uint8_t data);
 
 	// generate one sample of sound
-	void generate(int32_t output[OUTPUTS]);
-	void generate_ssg(int32_t output[SSG_OUTPUTS]);
+	void generate(output_data *output, uint32_t numsamples = 1);
+	void generate_ssg(output_data_ssg *output, uint32_t numsamples = 1);
 
 protected:
 	// internal updates
@@ -438,6 +444,8 @@ public:
 	using fm_engine = fm_engine_base<opna_registers>;
 	static constexpr uint32_t OUTPUTS = fm_engine::OUTPUTS;
 	static constexpr uint32_t SSG_OUTPUTS = 1;
+	using output_data = fm_engine::output_data;
+	using output_data_ssg = ymfm_output<SSG_OUTPUTS>;
 
 	// constructor
 	ym2610(ymfm_interface &intf, uint8_t channel_mask = 0x36);
@@ -471,8 +479,8 @@ public:
 	void write(uint32_t offset, uint8_t data);
 
 	// generate one sample of sound
-	void generate(int32_t output[OUTPUTS]);
-	void generate_ssg(int32_t output[SSG_OUTPUTS]);
+	void generate(output_data *output, uint32_t numsamples = 1);
+	void generate_ssg(output_data_ssg *output, uint32_t numsamples = 1);
 
 protected:
 	// internal state
@@ -501,6 +509,7 @@ class ym2612
 public:
 	using fm_engine = fm_engine_base<opna_registers>;
 	static constexpr uint32_t OUTPUTS = fm_engine::OUTPUTS;
+	using output_data = fm_engine::output_data;
 
 	// constructor
 	ym2612(ymfm_interface &intf);
@@ -527,7 +536,7 @@ public:
 	void write(uint32_t offset, uint8_t data);
 
 	// generate one sample of sound
-	void generate(int32_t output[OUTPUTS]);
+	void generate(output_data *output, uint32_t numsamples = 1);
 
 protected:
 	// internal state
@@ -546,7 +555,7 @@ public:
 	ym3438(ymfm_interface &intf) : ym2612(intf) { }
 
 	// generate one sample of sound
-	void generate(int32_t output[OUTPUTS]);
+	void generate(output_data *output, uint32_t numsamples = 1);
 };
 
 
@@ -558,7 +567,7 @@ public:
 	ymf276(ymfm_interface &intf) : ym2612(intf) { }
 
 	// generate one sample of sound
-	void generate(int32_t output[OUTPUTS]);
+	void generate(output_data *output, uint32_t numsamples);
 };
 
 }
