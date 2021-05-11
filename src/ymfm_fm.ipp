@@ -542,7 +542,7 @@ void fm_operator<RegisterType>::start_attack(bool is_restart)
 		return;
 	m_env_state = EG_ATTACK;
 
-	// generally not inverted at start, except if SSG-EG is enabled and 
+	// generally not inverted at start, except if SSG-EG is enabled and
 	// one of the inverted modes is specified; leave this alone on a
 	// restart, as it is managed by the clock_ssg_eg_state() code
 	if (RegisterType::EG_HAS_SSG && !is_restart)
@@ -699,7 +699,8 @@ void fm_operator<RegisterType>::clock_envelope(uint32_t env_counter)
 		return;
 
 	// determine the increment based on the non-fractional part of env_counter
-	uint32_t increment = attenuation_increment(rate, bitfield(env_counter, 11, 3));
+	uint32_t relevant_bits = bitfield(env_counter, (rate_shift <= 11) ? 11 : rate_shift, 3);
+	uint32_t increment = attenuation_increment(rate, relevant_bits);
 
 	// attack is the only one that increases
 	if (m_env_state == EG_ATTACK)
