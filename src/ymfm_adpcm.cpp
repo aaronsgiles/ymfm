@@ -34,16 +34,6 @@ namespace ymfm
 {
 
 //*********************************************************
-//  DEBUGGING
-//*********************************************************
-
-// set this to only play certain channels: bits 0-5 are ADPCM-A
-// channels and bit 0x80 is the ADPCM-B channel
-constexpr uint8_t global_chanmask = 0xff;
-
-
-
-//*********************************************************
 // ADPCM "A" REGISTERS
 //*********************************************************
 
@@ -142,7 +132,7 @@ void adpcm_a_channel::keyonoff(bool on)
 		m_step_index = 0;
 
 		// don't log masked channels
-		if (((global_chanmask >> m_choffs) & 1) != 0)
+		if (((debug::GLOBAL_ADPCM_A_CHANNEL_MASK >> m_choffs) & 1) != 0)
 			debug::log_keyon("KeyOn ADPCM-A%d: pan=%d%d start=%04X end=%04X level=%02X\n",
 				m_choffs,
 				m_regs.ch_pan_left(m_choffs),
@@ -325,7 +315,7 @@ template<int NumOutputs>
 void adpcm_a_engine::output(ymfm_output<NumOutputs> &output, uint32_t chanmask)
 {
 	// mask out some channels for debug purposes
-	chanmask &= global_chanmask;
+	chanmask &= debug::GLOBAL_ADPCM_A_CHANNEL_MASK;
 
 	// compute the output of each channel
 	for (int chnum = 0; chnum < std::size(m_channel); chnum++)
@@ -534,7 +524,7 @@ template<int NumOutputs>
 void adpcm_b_channel::output(ymfm_output<NumOutputs> &output, uint32_t rshift) const
 {
 	// mask out some channels for debug purposes
-	if ((global_chanmask & 0x80) == 0)
+	if ((debug::GLOBAL_ADPCM_B_CHANNEL_MASK & 1) == 0)
 		return;
 
 	// do a linear interpolation between samples
@@ -602,7 +592,7 @@ void adpcm_b_channel::write(uint32_t regnum, uint8_t value)
 			load_start();
 
 			// don't log masked channels
-			if ((global_chanmask & 0x80) != 0)
+			if ((debug::GLOBAL_ADPCM_B_CHANNEL_MASK & 1) != 0)
 				debug::log_keyon("KeyOn ADPCM-B: rep=%d spk=%d pan=%d%d dac=%d 8b=%d rom=%d ext=%d rec=%d start=%04X end=%04X pre=%04X dn=%04X lvl=%02X lim=%04X\n",
 					m_regs.repeat(),
 					m_regs.speaker(),
