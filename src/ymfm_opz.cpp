@@ -500,10 +500,6 @@ std::string opz_registers::log_keyon(uint32_t choffs, uint32_t opoffs)
 	uint32_t chnum = choffs;
 	uint32_t opnum = opoffs;
 
-	// don't log masked channels
-	if (((global_chanmask >> chnum) & 1) == 0)
-		return "";
-
 	char buffer[256];
 	char *end = &buffer[0];
 
