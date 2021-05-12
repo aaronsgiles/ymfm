@@ -562,9 +562,13 @@ void fm_operator<RegisterType>::start_release()
 		return;
 	m_env_state = EG_RELEASE;
 
-	// adjust attenuation if inverted due to SSG-EG
+	// if attenuation if inverted due to SSG-EG, snap the inverted attenuation
+	// as the starting point
 	if (RegisterType::EG_HAS_SSG && m_ssg_inverted)
-		m_env_attenuation = 0x200 - m_env_attenuation;
+	{
+		m_env_attenuation = (0x200 - m_env_attenuation) & 0x3ff;
+		m_ssg_inverted = false;
+	}
 }
 
 
