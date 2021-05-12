@@ -45,6 +45,33 @@ namespace ymfm
 {
 
 //*********************************************************
+//  DEBUGGING
+//*********************************************************
+
+class debug
+{
+public:
+	static constexpr bool LOG_KEYON_EVENTS = false;
+	static constexpr bool LOG_UNEXPECTED_READ_WRITES = false;
+
+	template<typename... Params>
+	static void log_keyon(Params &&... args)
+	{
+		if (LOG_KEYON_EVENTS)
+			printf(args...);
+	}
+
+	template<typename... Params>
+	static void log_unexpected_read_write(Params &&... args)
+	{
+		if (LOG_UNEXPECTED_READ_WRITES)
+			printf(args...);
+	}
+};
+
+
+
+//*********************************************************
 //  GLOBAL HELPERS
 //*********************************************************
 
@@ -182,16 +209,6 @@ class ymfm_interface
 	template<typename RegisterType> friend class fm_engine_base;
 
 public:
-	// logging helper
-	template<typename... Params>
-	void log(Params &&... args)
-	{
-		char buffer[256];
-		snprintf(buffer, sizeof(buffer), std::forward<Params>(args)...);
-		buffer[sizeof(buffer) - 1] = 0;
-		ymfm_log(buffer);
-	}
-
 	// the following functions must be implemented by any derived classes; the
 	// default implementations are sufficient for some minimal operation, but will
 	// likely need to be overridden to integrate with the outside world; they are
@@ -270,10 +287,6 @@ public:
 	// a write to the sound data; our responsibility is to write the data to
 	// the appropriate RAM at the given offset
 	virtual void ymfm_adpcm_b_write(uint32_t offset, uint8_t data) { }
-
-	// the chip implementation calls this to log warnings or other information;
-	// our responsibility is to either ignore it or surface it for debugging
-	virtual void ymfm_log(char const *string) { }
 
 protected:
 	// pointer to engine callbacks -- this is set directly by the engine at
