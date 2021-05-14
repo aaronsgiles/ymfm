@@ -4,7 +4,7 @@
 
 ## Supported environments
 
-This code should compile cleanly in any environment that has C++17 support.
+This code should compile cleanly in any environment that has C++14 support.
 It has been tested on gcc, clang, and Microsoft Visual C++ 2019.
 
 ## Supported chip families
