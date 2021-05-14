@@ -43,6 +43,10 @@ Currently, support is present for the following chips (organized by header file)
 These cores were originally written during the summer and fall of 2020 as part of the [MAME](https://mamedev.org/) project.
 As such, their design started off heavily based on how MAME works.
 
+The OPM/OPN cores first appeared in MAME 0.230.
+The OPL cores were added in MAME 0.231.
+A further rewrite to abstract MAME dependencies is planned for MAME 0.232.
+
 The goal was threefold:
 1. provide BSD-licensed emulation cores that are more compatible with MAME's core licensing
 1. modernize and unify the code around a common implementation of shared features
