@@ -44,9 +44,8 @@ namespace ymfm
 
 // ======================> ssg_override
 
-// this class represents a built-in overridable SSG implementation; at this
-// time it is not implemented, so you will have to add your own, or else live
-// with no SSG audio
+// this class describes a simple interface to allow the internal SSG to be
+// overridden with another implementation
 class ssg_override
 {
 public:
