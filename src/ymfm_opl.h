@@ -36,6 +36,7 @@
 #include "ymfm.h"
 #include "ymfm_adpcm.h"
 #include "ymfm_fm.h"
+#include "ymfm_pcm.h"
 
 namespace ymfm
 {
@@ -682,10 +683,24 @@ protected:
 
 class ymf278b
 {
+	// Using the nominal datasheet frequency of 33.868MHz, the output of
+	// the chip will be clock/768 = 44.1kHz. However, the FM engine is
+	// clocked internally at clock/(19*36), or 49.515kHz, so the FM output
+	// needs to be downsampled. The calculations below produce the fractional
+	// number of extra FM samples we need to consume for each output sample,
+	// as a 0.24 fixed point fraction.
+	static constexpr double NOMINAL_CLOCK = 33868800;
+	static constexpr double NOMINAL_FM_RATE = NOMINAL_CLOCK / double(opl4_registers::DEFAULT_PRESCALE * opl4_registers::OPERATORS);
+	static constexpr double NOMINAL_OUTPUT_RATE = NOMINAL_CLOCK / 768.0;
+	static constexpr uint32_t FM_STEP = uint32_t((NOMINAL_FM_RATE / NOMINAL_OUTPUT_RATE - 1.0) * double(1 << 24));
+
 public:
 	using fm_engine = fm_engine_base<opl4_registers>;
-	using output_data = fm_engine::output_data;
-	static constexpr uint32_t OUTPUTS = fm_engine::OUTPUTS;
+	static constexpr uint32_t OUTPUTS = 6;
+	using output_data = ymfm_output<OUTPUTS>;
+
+	static constexpr uint8_t STATUS_BUSY = 0x01;
+	static constexpr uint8_t STATUS_LD = 0x02;
 
 	// constructor
 	ymf278b(ymfm_interface &intf);
@@ -697,17 +712,20 @@ public:
 	void save_restore(ymfm_saved_state &state);
 
 	// pass-through helpers
-	uint32_t sample_rate(uint32_t input_clock) const { return m_fm.sample_rate(input_clock); }
+	uint32_t sample_rate(uint32_t input_clock) const { return input_clock / 768; }
 	void invalidate_caches() { m_fm.invalidate_caches(); }
 
 	// read access
 	uint8_t read_status();
+	uint8_t read_data_pcm();
 	uint8_t read(uint32_t offset);
 
 	// write access
 	void write_address(uint8_t data);
 	void write_data(uint8_t data);
 	void write_address_hi(uint8_t data);
+	void write_address_pcm(uint8_t data);
+	void write_data_pcm(uint8_t data);
 	void write(uint32_t offset, uint8_t data);
 
 	// generate samples of sound
@@ -716,7 +734,11 @@ public:
 protected:
 	// internal state
 	uint16_t m_address;              // address register
+	uint32_t m_fm_pos;               // FM resampling position
+	uint32_t m_load_remaining;       // how many more samples until LD flag clears
+	bool m_next_status_id;           // flag to track which status ID to return
 	fm_engine m_fm;                  // core FM engine
+	pcm_engine m_pcm;                // core PCM engine
 };
 
 
