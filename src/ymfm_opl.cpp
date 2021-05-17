@@ -1680,11 +1680,11 @@ void ymf278b::generate(output_data *output, uint32_t numsamples)
 	for (uint32_t samp = 0; samp < numsamples; samp++, output++)
 	{
 		// clock the system
-		m_fm_pos += FM_STEP;
-		if (bitfield(m_fm_pos, 24))
+		m_fm_pos += FM_EXTRA_SAMPLE_STEP;
+		if (m_fm_pos >= FM_EXTRA_SAMPLE_THRESH)
 		{
 			m_fm.clock(fm_engine::ALL_CHANNELS);
-			m_fm_pos &= 0xffffff;
+			m_fm_pos -= FM_EXTRA_SAMPLE_THRESH;
 		}
 		m_fm.clock(fm_engine::ALL_CHANNELS);
 		m_pcm.clock(pcm_engine::ALL_CHANNELS);
@@ -1697,17 +1697,17 @@ void ymf278b::generate(output_data *output, uint32_t numsamples)
 		pcm_engine::output_data pcmout;
 		m_pcm.output(pcmout.clear(), pcm_engine::ALL_CHANNELS);
 
-		// DO2 output: mixed FM channels 0+1 and wavetable channels 0+1
-		output->data[0] = (fmout.data[0] * fm_l + pcmout.data[0] * pcm_l) >> 11;
-		output->data[1] = (fmout.data[1] * fm_r + pcmout.data[1] * pcm_r) >> 11;
-
 		// DO0 output: FM channels 2+3 only
-		output->data[2] = fmout.data[2];
-		output->data[3] = fmout.data[3];
+		output->data[0] = fmout.data[2];
+		output->data[1] = fmout.data[3];
 
 		// DO1 output: wavetable channels 2+3 only
-		output->data[4] = pcmout.data[2];
-		output->data[5] = pcmout.data[3];
+		output->data[2] = pcmout.data[2];
+		output->data[3] = pcmout.data[3];
+
+		// DO2 output: mixed FM channels 0+1 and wavetable channels 0+1
+		output->data[4] = (fmout.data[0] * fm_l + pcmout.data[0] * pcm_l) >> 11;
+		output->data[5] = (fmout.data[1] * fm_r + pcmout.data[1] * pcm_r) >> 11;
 
 		// YMF278B output is 16-bit 2s complement serial
 		output->clamp16();
