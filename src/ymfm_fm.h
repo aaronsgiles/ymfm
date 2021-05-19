@@ -201,7 +201,7 @@ public:
 	void keyonoff(uint32_t on, keyon_type type);
 
 	// return a reference to our registers
-	RegisterType &regs() { return m_regs; }
+	RegisterType &regs() const { return m_regs; }
 
 	// simple getters for debugging
 	envelope_state debug_eg_state() const { return m_env_state; }
@@ -297,7 +297,7 @@ public:
 	}
 
 	// return a reference to our registers
-	RegisterType &regs() { return m_regs; }
+	RegisterType &regs() const { return m_regs; }
 
 	// simple getters for debugging
 	fm_operator<RegisterType> *debug_operator(int index) const { return m_op[index]; }
