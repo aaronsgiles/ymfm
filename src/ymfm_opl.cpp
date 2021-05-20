@@ -448,9 +448,9 @@ opll_registers::opll_registers() :
 		m_waveform[1][index] = bitfield(index, 9) ? zeroval : m_waveform[0][index];
 
 	// initialize the instruments to something sane
-	for (unsigned int choffs = 0; choffs < CHANNELS; choffs++)
+	for (uint32_t choffs = 0; choffs < CHANNELS; choffs++)
 		m_chinst[choffs] = &m_regdata[0];
-	for (unsigned int opoffs = 0; opoffs < OPERATORS; opoffs++)
+	for (uint32_t opoffs = 0; opoffs < OPERATORS; opoffs++)
 		m_opinst[opoffs] = &m_regdata[bitfield(opoffs, 0)];
 }
 
