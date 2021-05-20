@@ -377,7 +377,7 @@ public:
 
 	// internal helper
 	ymfm_saved_state &write(uint8_t data) { m_buffer.push_back(data); return *this; }
-	uint8_t read() { return (m_offset < (int32_t) m_buffer.size()) ? m_buffer[m_offset++] : 0; }
+	uint8_t read() { return (m_offset < int32_t(m_buffer.size())) ? m_buffer[m_offset++] : 0; }
 
 	// internal state
 	std::vector<uint8_t> &m_buffer;
