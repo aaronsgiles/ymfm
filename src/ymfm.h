@@ -295,7 +295,7 @@ struct ymfm_output
 	// clear all outputs to 0
 	ymfm_output &clear()
 	{
-		for (size_t index = 0; index < NumOutputs; index++)
+		for (uint32_t index = 0; index < NumOutputs; index++)
 			data[index] = 0;
 		return *this;
 	}
@@ -303,7 +303,7 @@ struct ymfm_output
 	// clamp all outputs to a 16-bit signed value
 	ymfm_output &clamp16()
 	{
-		for (size_t index = 0; index < NumOutputs; index++)
+		for (uint32_t index = 0; index < NumOutputs; index++)
 			data[index] = clamp(data[index], -32768, 32767);
 		return *this;
 	}
@@ -311,7 +311,7 @@ struct ymfm_output
 	// run each output value through the floating-point processor
 	ymfm_output &roundtrip_fp()
 	{
-		for (size_t index = 0; index < NumOutputs; index++)
+		for (uint32_t index = 0; index < NumOutputs; index++)
 			data[index] = ymfm::roundtrip_fp(data[index]);
 		return *this;
 	}
@@ -361,7 +361,7 @@ public:
 	void save(uint32_t &data) { write(data).write(data >> 8).write(data >> 16).write(data >> 24); }
 	void save(envelope_state &data) { write(uint8_t(data)); }
 	template<typename DataType, int Count>
-	void save(DataType (&data)[Count]) { for (size_t index = 0; index < Count; index++) save(data[index]); }
+	void save(DataType (&data)[Count]) { for (uint32_t index = 0; index < Count; index++) save(data[index]); }
 
 	// restore data from the buffer
 	void restore(bool &data) { data = read() ? true : false; }
@@ -373,7 +373,7 @@ public:
 	void restore(uint32_t &data) { data = read(); data |= read() << 8; data |= read() << 16; data |= read() << 24; }
 	void restore(envelope_state &data) { data = envelope_state(read()); }
 	template<typename DataType, int Count>
-	void restore(DataType (&data)[Count]) { for (size_t index = 0; index < Count; index++) restore(data[index]); }
+	void restore(DataType (&data)[Count]) { for (uint32_t index = 0; index < Count; index++) restore(data[index]); }
 
 	// internal helper
 	ymfm_saved_state &write(uint8_t data) { m_buffer.push_back(data); return *this; }

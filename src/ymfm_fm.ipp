@@ -837,12 +837,12 @@ void fm_channel<RegisterType>::save_restore(ymfm_saved_state &state)
 template<class RegisterType>
 void fm_channel<RegisterType>::keyonoff(uint32_t states, keyon_type type, uint32_t chnum)
 {
-	for (size_t opnum = 0; opnum < array_size(m_op); opnum++)
+	for (uint32_t opnum = 0; opnum < array_size(m_op); opnum++)
 		if (m_op[opnum] != nullptr)
 			m_op[opnum]->keyonoff(bitfield(states, opnum), type);
 
 	if (debug::LOG_KEYON_EVENTS && ((debug::GLOBAL_FM_CHANNEL_MASK >> chnum) & 1) != 0)
-		for (size_t opnum = 0; opnum < array_size(m_op); opnum++)
+		for (uint32_t opnum = 0; opnum < array_size(m_op); opnum++)
 			if (m_op[opnum] != nullptr)
 				debug::log_keyon("%c%s\n", bitfield(states, opnum) ? '+' : '-', m_regs.log_keyon(m_choffs, m_op[opnum]->opoffs()).c_str());
 }
@@ -858,7 +858,7 @@ bool fm_channel<RegisterType>::prepare()
 	uint32_t active_mask = 0;
 
 	// prepare all operators and determine if they are active
-	for (size_t opnum = 0; opnum < array_size(m_op); opnum++)
+	for (uint32_t opnum = 0; opnum < array_size(m_op); opnum++)
 		if (m_op[opnum] != nullptr)
 			if (m_op[opnum]->prepare())
 				active_mask |= 1 << opnum;
@@ -878,7 +878,7 @@ void fm_channel<RegisterType>::clock(uint32_t env_counter, int32_t lfo_raw_pm)
 	m_feedback[0] = m_feedback[1];
 	m_feedback[1] = m_feedback_in;
 
-	for (size_t opnum = 0; opnum < array_size(m_op); opnum++)
+	for (uint32_t opnum = 0; opnum < array_size(m_op); opnum++)
 		if (m_op[opnum] != nullptr)
 			m_op[opnum]->clock(env_counter, lfo_raw_pm);
 }
@@ -1173,11 +1173,11 @@ fm_engine_base<RegisterType>::fm_engine_base(ymfm_interface &intf) :
 	m_intf.m_engine = this;
 
 	// create the channels
-	for (size_t chnum = 0; chnum < CHANNELS; chnum++)
+	for (uint32_t chnum = 0; chnum < CHANNELS; chnum++)
 		m_channel[chnum] = std::make_unique<fm_channel<RegisterType>>(*this, RegisterType::channel_offset(chnum));
 
 	// create the operators
-	for (size_t opnum = 0; opnum < OPERATORS; opnum++)
+	for (uint32_t opnum = 0; opnum < OPERATORS; opnum++)
 		m_operator[opnum] = std::make_unique<fm_operator<RegisterType>>(*this, RegisterType::operator_offset(opnum));
 
 	// do the initial operator assignment
@@ -1232,11 +1232,11 @@ void fm_engine_base<RegisterType>::save_restore(ymfm_saved_state &state)
 	m_regs.save_restore(state);
 
 	// save channel data
-	for (size_t chnum = 0; chnum < CHANNELS; chnum++)
+	for (uint32_t chnum = 0; chnum < CHANNELS; chnum++)
 		m_channel[chnum]->save_restore(state);
 
 	// save operator data
-	for (size_t opnum = 0; opnum < OPERATORS; opnum++)
+	for (uint32_t opnum = 0; opnum < OPERATORS; opnum++)
 		m_operator[opnum]->save_restore(state);
 
 	// invalidate any caches
@@ -1262,7 +1262,7 @@ uint32_t fm_engine_base<RegisterType>::clock(uint32_t chanmask)
 
 		// call each channel to prepare
 		m_active_channels = 0;
-		for (size_t chnum = 0; chnum < CHANNELS; chnum++)
+		for (uint32_t chnum = 0; chnum < CHANNELS; chnum++)
 			if (bitfield(chanmask, chnum))
 				if (m_channel[chnum]->prepare())
 					m_active_channels |= 1 << chnum;
@@ -1282,18 +1282,18 @@ uint32_t fm_engine_base<RegisterType>::clock(uint32_t chanmask)
 	int32_t lfo_raw_pm = m_regs.clock_noise_and_lfo();
 
 	// now update the state of all the channels and operators
-	for (size_t chnum = 0; chnum < CHANNELS; chnum++)
+	for (uint32_t chnum = 0; chnum < CHANNELS; chnum++)
 		if (bitfield(chanmask, chnum))
 			m_channel[chnum]->clock(m_env_counter, lfo_raw_pm);
 
 #if 0
 //Temporary debugging...
 static double curtime = 0;
-//for (size_t chnum = 0; chnum < CHANNELS; chnum++)
+//for (uint32_t chnum = 0; chnum < CHANNELS; chnum++)
 size_t chnum = 4;
 {
 	printf("t=%.4f ch%d: ", curtime, chnum);
-	for (size_t opnum = 0; opnum < 4; opnum++)
+	for (uint32_t opnum = 0; opnum < 4; opnum++)
 	{
 		auto op = debug_channel(chnum)->debug_operator(opnum);
 		auto eg_state = op->debug_eg_state();
@@ -1336,7 +1336,7 @@ void fm_engine_base<RegisterType>::output(output_data &output, uint32_t rshift, 
 		uint32_t phase_select = (bitfield(op13phase, 2) ^ bitfield(op13phase, 7)) | bitfield(op13phase, 3) | (bitfield(op17phase, 5) ^ bitfield(op17phase, 3));
 
 		// sum over all the desired channels
-		for (size_t chnum = 0; chnum < CHANNELS; chnum++)
+		for (uint32_t chnum = 0; chnum < CHANNELS; chnum++)
 			if (bitfield(chanmask, chnum))
 			{
 				if (chnum == 6)
@@ -1354,7 +1354,7 @@ void fm_engine_base<RegisterType>::output(output_data &output, uint32_t rshift, 
 	else
 	{
 		// sum over all the desired channels
-		for (size_t chnum = 0; chnum < CHANNELS; chnum++)
+		for (uint32_t chnum = 0; chnum < CHANNELS; chnum++)
 			if (bitfield(chanmask, chnum))
 			{
 				if (m_channel[chnum]->is4op())
@@ -1431,8 +1431,8 @@ void fm_engine_base<RegisterType>::assign_operators()
 	typename RegisterType::operator_mapping map;
 	m_regs.operator_map(map);
 
-	for (size_t chnum = 0; chnum < CHANNELS; chnum++)
-		for (size_t index = 0; index < 4; index++)
+	for (uint32_t chnum = 0; chnum < CHANNELS; chnum++)
+		for (uint32_t index = 0; index < 4; index++)
 		{
 			uint32_t opnum = bitfield(map.chan[chnum], 8 * index, 8);
 			m_channel[chnum]->assign(index, (opnum == 0xff) ? nullptr : m_operator[opnum].get());
@@ -1484,7 +1484,7 @@ void fm_engine_base<RegisterType>::engine_timer_expired(uint32_t tnum)
 
 	// if timer A fired in CSM mode, trigger CSM on all relevant channels
 	if (tnum == 0 && m_regs.csm())
-		for (size_t chnum = 0; chnum < CHANNELS; chnum++)
+		for (uint32_t chnum = 0; chnum < CHANNELS; chnum++)
 			if (bitfield(RegisterType::CSM_TRIGGER_MASK, chnum))
 				m_channel[chnum]->keyonoff(1, KEYON_CSM, chnum);
 
