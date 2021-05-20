@@ -1290,7 +1290,7 @@ uint32_t fm_engine_base<RegisterType>::clock(uint32_t chanmask)
 //Temporary debugging...
 static double curtime = 0;
 //for (uint32_t chnum = 0; chnum < CHANNELS; chnum++)
-size_t chnum = 4;
+uint32_t chnum = 4;
 {
 	printf("t=%.4f ch%d: ", curtime, chnum);
 	for (uint32_t opnum = 0; opnum < 4; opnum++)
