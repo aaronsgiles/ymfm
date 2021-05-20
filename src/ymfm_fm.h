@@ -262,7 +262,7 @@ public:
 	uint32_t choffs() const { return m_choffs; }
 
 	// assign operators
-	void assign(int index, fm_operator<RegisterType> *op)
+	void assign(size_t index, fm_operator<RegisterType> *op)
 	{
 		assert(index < array_size(m_op));
 		m_op[index] = op;
@@ -300,7 +300,7 @@ public:
 	RegisterType &regs() const { return m_regs; }
 
 	// simple getters for debugging
-	fm_operator<RegisterType> *debug_operator(int index) const { return m_op[index]; }
+	fm_operator<RegisterType> *debug_operator(size_t index) const { return m_op[index]; }
 
 private:
 	// helper to add values to the outputs based on channel enables
@@ -408,8 +408,8 @@ public:
 	void invalidate_caches() { m_modified_channels = RegisterType::ALL_CHANNELS; }
 
 	// simple getters for debugging
-	fm_channel<RegisterType> *debug_channel(int index) const { return m_channel[index].get(); }
-	fm_operator<RegisterType> *debug_operator(int index) const { return m_operator[index].get(); }
+	fm_channel<RegisterType> *debug_channel(size_t index) const { return m_channel[index].get(); }
+	fm_operator<RegisterType> *debug_operator(size_t index) const { return m_operator[index].get(); }
 
 public:
 	// timer callback; called by the interface when a timer fires

@@ -48,7 +48,7 @@ opn_registers_base<IsOpnA>::opn_registers_base() :
 	m_lfo_am(0)
 {
 	// create the waveforms
-	for (int index = 0; index < WAVEFORM_LENGTH; index++)
+	for (size_t index = 0; index < WAVEFORM_LENGTH; index++)
 		m_waveform[0][index] = abs_sin_attenuation(index) | (bitfield(index, 9) << 15);
 }
 
