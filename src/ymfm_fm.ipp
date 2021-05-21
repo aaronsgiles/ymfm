@@ -540,8 +540,11 @@ void fm_operator<RegisterType>::start_attack(bool is_restart)
 	if (RegisterType::EG_HAS_SSG && !is_restart)
 		m_ssg_inverted = m_regs.op_ssg_eg_enable(m_opoffs) & bitfield(m_regs.op_ssg_eg_mode(m_opoffs), 2);
 
-	// reset the phase when we start an attack
-	m_phase = 0;
+	// reset the phase when we start an attack due to a key on
+	// (but not when due to an SSG-EG restart except in certain cases
+	// managed directly by the SSG-EG code)
+	if (!is_restart)
+		m_phase = 0;
 
 	// if the attack rate >= 62 then immediately go to max attenuation
 	if (m_cache.eg_rate[EG_ATTACK] >= 62)
@@ -650,7 +653,7 @@ void fm_operator<RegisterType>::clock_ssg_eg_state()
 		if (m_env_state == EG_DECAY || m_env_state == EG_SUSTAIN)
 			start_attack(true);
 
-		// phase is reset to 0 regardless in modes 0/4
+		// phase is reset to 0 in modes 0/4
 		if (bitfield(mode, 1) == 0)
 			m_phase = 0;
 	}
