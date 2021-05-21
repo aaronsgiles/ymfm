@@ -80,13 +80,13 @@ opl_registers_base<Revision>::opl_registers_base() :
 	uint16_t *wf7 = &m_waveform[7 % WAVEFORMS][0];
 
 	// create the waveforms
-	for (int index = 0; index < WAVEFORM_LENGTH; index++)
+	for (uint32_t index = 0; index < WAVEFORM_LENGTH; index++)
 		wf0[index] = abs_sin_attenuation(index) | (bitfield(index, 9) << 15);
 
 	if (WAVEFORMS >= 4)
 	{
 		uint16_t zeroval = wf0[0];
-		for (int index = 0; index < WAVEFORM_LENGTH; index++)
+		for (uint32_t index = 0; index < WAVEFORM_LENGTH; index++)
 		{
 			wf1[index] = bitfield(index, 9) ? zeroval : wf0[index];
 			wf2[index] = wf0[index] & 0x7fff;
@@ -440,17 +440,17 @@ opll_registers::opll_registers() :
 	m_lfo_am(0)
 {
 	// create the waveforms
-	for (int index = 0; index < WAVEFORM_LENGTH; index++)
+	for (uint32_t index = 0; index < WAVEFORM_LENGTH; index++)
 		m_waveform[0][index] = abs_sin_attenuation(index) | (bitfield(index, 9) << 15);
 
 	uint16_t zeroval = m_waveform[0][0];
-	for (int index = 0; index < WAVEFORM_LENGTH; index++)
+	for (uint32_t index = 0; index < WAVEFORM_LENGTH; index++)
 		m_waveform[1][index] = bitfield(index, 9) ? zeroval : m_waveform[0][index];
 
 	// initialize the instruments to something sane
-	for (int choffs = 0; choffs < CHANNELS; choffs++)
+	for (uint32_t choffs = 0; choffs < CHANNELS; choffs++)
 		m_chinst[choffs] = &m_regdata[0];
-	for (int opoffs = 0; opoffs < OPERATORS; opoffs++)
+	for (uint32_t opoffs = 0; opoffs < OPERATORS; opoffs++)
 		m_opinst[opoffs] = &m_regdata[bitfield(opoffs, 0)];
 }
 
