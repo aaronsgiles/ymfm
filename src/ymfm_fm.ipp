@@ -637,10 +637,10 @@ void fm_operator<RegisterType>::clock_ssg_eg_state()
 		// set the inverted flag to the end state (0 for modes 1/7, 1 for modes 3/5)
 		m_ssg_inverted = bitfield(mode, 2) ^ bitfield(mode, 1);
 
-		// if holding low (modes 1/5), force the attenuation to maximum
-		// once we're past the attack phase
-		if (m_env_state != EG_ATTACK && bitfield(mode, 1) == 0)
-			m_env_attenuation = 0x3ff;
+		// if holding, force the attenuation to the expected value once we're
+		// past the attack phase
+		if (m_env_state != EG_ATTACK)
+			m_env_attenuation = m_ssg_inverted ? 0x200 : 0x3ff;
 	}
 
 	// continuous modes (0/2/4/6)
