@@ -102,10 +102,15 @@ opz_registers::opz_registers() :
 	for (uint32_t index = 0; index < WAVEFORM_LENGTH; index++)
 		m_waveform[0][index] = abs_sin_attenuation(index) | (bitfield(index, 9) << 15);
 
+	// we only have the diagrams to judge from, but suspecting waveform 1 (and
+	// derived waveforms) are sin^2, based on OPX description of similar wave-
+	// forms; since our sin table is logarithmic, this ends up just being
+	// 2*existing value
 	uint16_t zeroval = m_waveform[0][0];
 	for (uint32_t index = 0; index < WAVEFORM_LENGTH; index++)
-		m_waveform[1][index] = (zeroval - m_waveform[0][(index & 0x1ff) ^ 0x100]) | (bitfield(index, 9) << 15);
+		m_waveform[1][index] = std::min<uint16_t>(2 * (m_waveform[0][index] & 0x7fff), zeroval) | (bitfield(index, 9) << 15);
 
+	// remaining waveforms are just derivations of the 2 main ones
 	for (uint32_t index = 0; index < WAVEFORM_LENGTH; index++)
 	{
 		m_waveform[2][index] = bitfield(index, 9) ? zeroval : m_waveform[0][index];
