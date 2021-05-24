@@ -176,15 +176,15 @@ public:
 
 	// system-wide registers
 	uint32_t timer_a_value() const              { return 0; }
-	uint32_t timer_b_value() const              { return byte(0x03, 0, 8); }
+	uint32_t timer_b_value() const              { return byte(0x03, 2, 6) | 0xc0; } // ???
 	uint32_t csm() const                        { return 0; }
-	uint32_t reset_timer_b() const              { return byte(0x14, 5, 1); }
+	uint32_t reset_timer_b() const              { return byte(0x03, 0, 1); } // ???
 	uint32_t reset_timer_a() const              { return 0; }
-	uint32_t enable_timer_b() const             { return byte(0x14, 3, 1); }
+	uint32_t enable_timer_b() const             { return byte(0x03, 0, 1); } // ???
 	uint32_t enable_timer_a() const             { return 0; }
-	uint32_t load_timer_b() const               { return byte(0x14, 1, 1); }
+	uint32_t load_timer_b() const               { return byte(0x03, 0, 1); } // ???
 	uint32_t load_timer_a() const               { return 0; }
-	uint32_t lfo_enable() const                 { return byte(0x04, 4, 1) ^ 1; }
+	uint32_t lfo_enable() const                 { return byte(0x04, 3, 1) ^ 1; }
 	uint32_t lfo_rate() const                   { return byte(0x04, 0, 3); }
 
 	// per-channel registers
@@ -198,8 +198,8 @@ public:
 	uint32_t ch_echo(uint32_t choffs) const          { return byte(0x18, 7, 1, choffs); }
 	uint32_t ch_lfo_pm_sens(uint32_t choffs) const   { return byte(0x18, 4, 3, choffs); }
 	uint32_t ch_lfo_am_sens(uint32_t choffs) const   { return byte(0x18, 0, 2, choffs); }
-	uint32_t ch_block_freq_24(uint32_t choffs) const { return word(0x20, 0, 6, 0x30, 0, 8, choffs); }
-	uint32_t ch_block_freq_13(uint32_t choffs) const { return word(0x28, 0, 6, 0x30, 0, 8, choffs); }
+	uint32_t ch_block_freq_24(uint32_t choffs) const { return word(0x20, 0, 7, 0x30, 0, 8, choffs); }
+	uint32_t ch_block_freq_13(uint32_t choffs) const { return word(0x28, 0, 7, 0x38, 0, 8, choffs); }
 
 	// per-operator registers
 	uint32_t op_detune(uint32_t opoffs) const        { return byte(0x40, 0, 6, opoffs); }
@@ -277,6 +277,17 @@ public:
 protected:
 	// internal state
 	fm_engine m_fm;                  // core FM engine
+};
+
+
+// ======================> ym3533
+
+class ym3533 : public ym3806
+{
+public:
+	// constructor
+	ym3533(ymfm_interface &intf) :
+		ym3806(intf) { }
 };
 
 }

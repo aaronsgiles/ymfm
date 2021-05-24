@@ -100,6 +100,7 @@ int main(int argc, char *argv[])
 
 	// ymfm_opq.h:
 	chip_wrapper<ymfm::ym3806> test3806;
+	chip_wrapper<ymfm::ym3533> test3533;
 
 	// ymfm_opz.h:
 	chip_wrapper<ymfm::ym2414> test2414;
