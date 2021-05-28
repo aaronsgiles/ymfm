@@ -77,7 +77,7 @@ namespace ymfm
 //        40-5F 0-xxxxxx Detune value (0-63)
 //              1---xxxx Multiple value (0-15)
 //        60-7F -xxxxxxx Total level (0-127)
-//        80-9F xxx----- Key scale rate (0-7)
+//        80-9F xx------ Key scale rate (0-3)
 //              ---xxxxx Attack rate (0-31)
 //        A0-BF x------- LFO AM enable, retrigger disable
 //               x------ Waveform select
@@ -88,11 +88,10 @@ namespace ymfm
 //
 // Diffs from OPM:
 //  - 2 frequencies/channel
-//  - KSR is 3 bits?
 //  - retrigger disable
 //  - 2 waveforms
 //  - uses FNUM
-//  - echo behavior
+//  - reverb behavior
 //  - larger detune range
 //
 // Questions:
@@ -173,17 +172,17 @@ public:
 	std::string log_keyon(uint32_t choffs, uint32_t opoffs);
 
 	// system-wide registers
-	uint32_t timer_a_value() const              { return 0; }
-	uint32_t timer_b_value() const              { return byte(0x03, 2, 6) | 0xc0; } // ???
-	uint32_t csm() const                        { return 0; }
-	uint32_t reset_timer_b() const              { return byte(0x03, 0, 1); } // ???
-	uint32_t reset_timer_a() const              { return 0; }
-	uint32_t enable_timer_b() const             { return byte(0x03, 0, 1); } // ???
-	uint32_t enable_timer_a() const             { return 0; }
-	uint32_t load_timer_b() const               { return byte(0x03, 0, 1); } // ???
-	uint32_t load_timer_a() const               { return 0; }
-	uint32_t lfo_enable() const                 { return byte(0x04, 3, 1) ^ 1; }
-	uint32_t lfo_rate() const                   { return byte(0x04, 0, 3); }
+	uint32_t timer_a_value() const                   { return 0; }
+	uint32_t timer_b_value() const                   { return byte(0x03, 2, 6) | 0xc0; } // ???
+	uint32_t csm() const                             { return 0; }
+	uint32_t reset_timer_b() const                   { return byte(0x03, 0, 1); } // ???
+	uint32_t reset_timer_a() const                   { return 0; }
+	uint32_t enable_timer_b() const                  { return byte(0x03, 0, 1); } // ???
+	uint32_t enable_timer_a() const                  { return 0; }
+	uint32_t load_timer_b() const                    { return byte(0x03, 0, 1); } // ???
+	uint32_t load_timer_a() const                    { return 0; }
+	uint32_t lfo_enable() const                      { return byte(0x04, 3, 1) ^ 1; }
+	uint32_t lfo_rate() const                        { return byte(0x04, 0, 3); }
 
 	// per-channel registers
 	uint32_t ch_output_any(uint32_t choffs) const    { return byte(0x10, 6, 2, choffs); }
@@ -203,7 +202,7 @@ public:
 	uint32_t op_detune(uint32_t opoffs) const        { return byte(0x40, 0, 6, opoffs); }
 	uint32_t op_multiple(uint32_t opoffs) const      { return byte(0x100, 0, 4, opoffs); }
 	uint32_t op_total_level(uint32_t opoffs) const   { return byte(0x60, 0, 7, opoffs); }
-	uint32_t op_ksr(uint32_t opoffs) const           { return byte(0x80, 5, 3, opoffs); }
+	uint32_t op_ksr(uint32_t opoffs) const           { return byte(0x80, 6, 2, opoffs); }
 	uint32_t op_attack_rate(uint32_t opoffs) const   { return byte(0x80, 0, 5, opoffs); }
 	uint32_t op_lfo_am_enable(uint32_t opoffs) const { return byte(0xa0, 7, 1, opoffs); }
 	uint32_t op_waveform(uint32_t opoffs) const      { return byte(0xa0, 6, 1, opoffs); }

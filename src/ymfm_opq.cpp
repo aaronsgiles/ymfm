@@ -171,7 +171,7 @@ int32_t opq_registers::clock_noise_and_lfo()
 	// when we cross the divider count, add enough to zero it and cause an
 	// increment at bit 8; the 7-bit value lives from bits 8-14
 	if (subcount >= lfo_max_count[lfo_rate()])
-		m_lfo_counter += 0x100 - subcount;
+		m_lfo_counter += 0x101 - subcount;
 
 	// AM value is 7 bits, staring at bit 8; grab the low 6 directly
 	m_lfo_am = bitfield(m_lfo_counter, 8, 6);
@@ -228,7 +228,7 @@ void opq_registers::cache_operator_data(uint32_t choffs, uint32_t opoffs, opdata
 	cache.waveform = &m_waveform[op_waveform(opoffs)][0];
 
 	// get frequency from the appropriate registers
-	uint32_t block_freq = cache.block_freq = (opoffs & 1) ? ch_block_freq_24(choffs) : ch_block_freq_13(choffs);
+	uint32_t block_freq = cache.block_freq = (opoffs & 8) ? ch_block_freq_24(choffs) : ch_block_freq_13(choffs);
 
 	// compute the keycode: block_freq is:
 	//
@@ -273,11 +273,8 @@ void opq_registers::cache_operator_data(uint32_t choffs, uint32_t opoffs, opdata
 	cache.eg_sustain |= (cache.eg_sustain + 1) & 0x10;
 	cache.eg_sustain <<= 5;
 
-	// determine KSR adjustment for enevlope rates; KSR is supposedly 3 bits
-	// not 2 like all other implementations, so unsure how this would work.
-	// Maybe keycode is a larger range? For now, we'll just take the upper 2
-	// bits and use that.
-	uint32_t ksrval = keycode >> ((op_ksr(opoffs) >> 1) ^ 3);
+	// determine KSR adjustment for enevlope rates
+	uint32_t ksrval = keycode >> (op_ksr(opoffs) ^ 3);
 	cache.eg_rate[EG_ATTACK] = effective_rate(op_attack_rate(opoffs) * 2, ksrval);
 	cache.eg_rate[EG_DECAY] = effective_rate(op_decay_rate(opoffs) * 2, ksrval);
 	cache.eg_rate[EG_SUSTAIN] = effective_rate(op_sustain_rate(opoffs) * 2, ksrval);
