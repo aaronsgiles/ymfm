@@ -112,12 +112,14 @@ public:
 	//       bool EG_HAS_DEPRESS: True if the chip has a DP ("depress"?) envelope stage (OPLL)
 	//        bool EG_HAS_REVERB: True if the chip has a faux reverb envelope stage (OPZ)
 	//           bool EG_HAS_SSG: True if the chip has SSG envelope support (OPN)
+	// bool EG_HAS_ATTACK_GLITCH: True if the chip doesn't increment attack if >= 62 after key on (OPN)
 	//      bool MODULATOR_DELAY: True if the modulator is delayed by 1 sample (OPL pre-OPL3)
 	//
 	static constexpr bool DYNAMIC_OPS = false;
 	static constexpr bool EG_HAS_DEPRESS = false;
 	static constexpr bool EG_HAS_REVERB = false;
 	static constexpr bool EG_HAS_SSG = false;
+	static constexpr bool EG_HAS_ATTACK_GLITCH = false;
 	static constexpr bool MODULATOR_DELAY = false;
 
 	// system-wide register defaults

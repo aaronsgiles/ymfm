@@ -63,7 +63,7 @@ namespace ymfm
 //              -x------ Pan left
 //              --xxx--- Feedback level for operator 1 (0-7)
 //              -----xxx Operator connection algorithm (0-7)
-//        18-1F x------- Echo
+//        18-1F x------- Reverb
 //              -xxx---- PM sensitivity
 //              ------xx AM shift
 //        20-27 -xxx---- Block (0-7), Operator 2 & 4
@@ -108,14 +108,12 @@ public:
 	static constexpr uint32_t CHANNELS = 8;
 	static constexpr uint32_t ALL_CHANNELS = (1 << CHANNELS) - 1;
 	static constexpr uint32_t OPERATORS = CHANNELS * 4;
-	static constexpr bool DYNAMIC_OPS = false;
 	static constexpr uint32_t WAVEFORMS = 2;
 	static constexpr uint32_t REGISTERS = 0x120;
 	static constexpr uint32_t REG_MODE = 0x03;
 	static constexpr uint32_t DEFAULT_PRESCALE = 2;
 	static constexpr uint32_t EG_CLOCK_DIVIDER = 3;
-	static constexpr bool EG_HAS_DEPRESS = false;
-	static constexpr bool EG_HAS_SSG = false;
+	static constexpr bool EG_HAS_REVERB = true;
 	static constexpr bool MODULATOR_DELAY = false;
 	static constexpr uint32_t CSM_TRIGGER_MASK = ALL_CHANNELS;
 	static constexpr uint8_t STATUS_TIMERA = 0;
@@ -195,7 +193,7 @@ public:
 	uint32_t ch_output_3(uint32_t choffs) const      { return 0; }
 	uint32_t ch_feedback(uint32_t choffs) const      { return byte(0x10, 3, 3, choffs); }
 	uint32_t ch_algorithm(uint32_t choffs) const     { return byte(0x10, 0, 3, choffs); }
-	uint32_t ch_echo(uint32_t choffs) const          { return byte(0x18, 7, 1, choffs); }
+	uint32_t ch_reverb(uint32_t choffs) const        { return byte(0x18, 7, 1, choffs); }
 	uint32_t ch_lfo_pm_sens(uint32_t choffs) const   { return byte(0x18, 4, 3, choffs); }
 	uint32_t ch_lfo_am_sens(uint32_t choffs) const   { return byte(0x18, 0, 2, choffs); }
 	uint32_t ch_block_freq_24(uint32_t choffs) const { return word(0x20, 0, 7, 0x30, 0, 8, choffs); }

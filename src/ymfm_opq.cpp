@@ -252,7 +252,7 @@ void opq_registers::cache_operator_data(uint32_t choffs, uint32_t opoffs, opdata
 	// 6-bit value where the middle value (0x20) means no detune; range is +/-20 cents
 	// this calculation gives a bit more, but shifting by 12 gives a bit less
 	// also, the real calculation is probably something to do with keycodes
-	cache.detune = ((op_detune(opoffs) - 0x20) * block_freq) >> 11;
+	cache.detune = ((int32_t(op_detune(opoffs)) - 0x20) * block_freq) >> 11;
 
 	// multiple value, as an x.1 value (0 means 0.5)
 	static const uint8_t s_multiple_map[16] = { 1,2,4,6,8,10,12,14,16,18,20,24,30,32,34,36 };
@@ -282,6 +282,7 @@ void opq_registers::cache_operator_data(uint32_t choffs, uint32_t opoffs, opdata
 	cache.eg_rate[EG_DECAY] = effective_rate(op_decay_rate(opoffs) * 2, ksrval);
 	cache.eg_rate[EG_SUSTAIN] = effective_rate(op_sustain_rate(opoffs) * 2, ksrval);
 	cache.eg_rate[EG_RELEASE] = effective_rate(op_release_rate(opoffs) * 4 + 2, ksrval);
+	cache.eg_rate[EG_REVERB] = (ch_reverb(choffs) != 0) ? 5 : cache.eg_rate[EG_RELEASE];
 	cache.eg_shift = 0;
 }
 
@@ -366,8 +367,8 @@ std::string opq_registers::log_keyon(uint32_t choffs, uint32_t opoffs)
 		end += sprintf(end, " pm=%d", ch_lfo_pm_sens(choffs));
 	if (am || pm)
 		end += sprintf(end, " lfo=%02X", lfo_rate());
-	if (ch_echo(choffs))
-		end += sprintf(end, " echo");
+	if (ch_reverb(choffs))
+		end += sprintf(end, " reverb");
 
 	return buffer;
 }
