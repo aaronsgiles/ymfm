@@ -248,11 +248,16 @@ void opq_registers::cache_operator_data(uint32_t choffs, uint32_t opoffs, opdata
 	// for speed, we just look it up in a 16-bit constant
 	keycode |= bitfield(0xfe80, bitfield(block_freq, 8, 4));
 
-	// detune adjustment; detune isn't really understood except that it is a
-	// 6-bit value where the middle value (0x20) means no detune; range is +/-20 cents
-	// this calculation gives a bit more, but shifting by 12 gives a bit less
-	// also, the real calculation is probably something to do with keycodes
-	cache.detune = ((int32_t(op_detune(opoffs)) - 0x20) * block_freq) >> 11;
+	// detune adjustment: the detune values supported by the OPQ are
+	// a much larger range (6 bits vs 3 bits) compared to any other
+	// known FM chip; based on experiments, it seems that the extra
+	// bits provide a bigger detune range rather than finer control,
+	// so until we get true measurements just assemble a net detune
+	// value by summing smaller detunes
+	int32_t detune = int32_t(op_detune(opoffs)) - 0x20;
+	int32_t abs_detune = std::abs(detune);
+	int32_t adjust = (abs_detune / 3) * detune_adjustment(3, keycode) + detune_adjustment(abs_detune % 3, keycode);
+	cache.detune = (detune >= 0) ? adjust : -adjust;
 
 	// multiple value, as an x.1 value (0 means 0.5)
 	static const uint8_t s_multiple_map[16] = { 1,2,4,6,8,10,12,14,16,18,20,24,30,32,34,36 };
@@ -308,15 +313,12 @@ uint32_t opq_registers::compute_phase_step(uint32_t choffs, uint32_t opoffs, opd
 		fnum &= 0xfff;
 	}
 
-	// this is likely not right, but should given the right approximate result
-	fnum += cache.detune;
-
 	// apply block shift to compute phase step
 	uint32_t block = bitfield(cache.block_freq, 12, 3);
 	uint32_t phase_step = (fnum << block) >> 2;
 
-	// apply detune based on the keycode -- this is probably where the real chip does it
-//	phase_step += cache.detune;
+	// apply detune based on the keycode
+	phase_step += cache.detune;
 
 	// clamp to 17 bits in case detune overflows
 	// QUESTION: is this specific to the YM2612/3438?
@@ -339,10 +341,10 @@ std::string opq_registers::log_keyon(uint32_t choffs, uint32_t opoffs)
 	char buffer[256];
 	char *end = &buffer[0];
 
-	end += sprintf(end, "%d.%02d freq=%04X dt=%d fb=%d alg=%X mul=%X tl=%02X ksr=%d adsr=%02X/%02X/%02X/%X sl=%X out=%c%c",
+	end += sprintf(end, "%d.%02d freq=%04X dt=%+2d fb=%d alg=%X mul=%X tl=%02X ksr=%d adsr=%02X/%02X/%02X/%X sl=%X out=%c%c",
 		chnum, opnum,
 		(opoffs & 1) ? ch_block_freq_24(choffs) : ch_block_freq_13(choffs),
-		op_detune(opoffs),
+		int32_t(op_detune(opoffs)) - 0x20,
 		ch_feedback(choffs),
 		ch_algorithm(choffs),
 		op_multiple(opoffs),
