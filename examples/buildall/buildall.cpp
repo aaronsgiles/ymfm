@@ -4,19 +4,20 @@
 //
 // Compile with:
 //
-//   g++ --std=c++14 -I../../src buildall.cpp ../../src/ymfm_opl.cpp ../../src/ymfm_opm.cpp ../../src/ymfm_opn.cpp ../../src/ymfm_opq.cpp ../../src/ymfm_opz.cpp ../../src/ymfm_adpcm.cpp ../../src/ymfm_pcm.cpp ../../src/ymfm_ssg.cpp -o buildall.exe
+//   g++ --std=c++14 -I../../src buildall.cpp ../../src/ymfm_misc.cpp ../../src/ymfm_opl.cpp ../../src/ymfm_opm.cpp ../../src/ymfm_opn.cpp ../../src/ymfm_opq.cpp ../../src/ymfm_opz.cpp ../../src/ymfm_adpcm.cpp ../../src/ymfm_pcm.cpp ../../src/ymfm_ssg.cpp -o buildall.exe
 //
 // or:
 //
-//   clang --std=c++14 -I../../src buildall.cpp ../../src/ymfm_opl.cpp ../../src/ymfm_opm.cpp ../../src/ymfm_opn.cpp ../../src/ymfm_opq.cpp ../../src/ymfm_opz.cpp ../../src/ymfm_adpcm.cpp ../../src/ymfm_pcm.cpp ../../src/ymfm_ssg.cpp -o buildall.exe
+//   clang --std=c++14 -I../../src buildall.cpp ../../src/ymfm_misc.cpp ../../src/ymfm_opl.cpp ../../src/ymfm_opm.cpp ../../src/ymfm_opn.cpp ../../src/ymfm_opq.cpp ../../src/ymfm_opz.cpp ../../src/ymfm_adpcm.cpp ../../src/ymfm_pcm.cpp ../../src/ymfm_ssg.cpp -o buildall.exe
 //
 // or:
 //
-//   cl -I..\..\src buildall.cpp ..\..\src\ymfm_opl.cpp ..\..\src\ymfm_opm.cpp ..\..\src\ymfm_opn.cpp ..\..\src\ymfm_opq.cpp ..\..\src\ymfm_opz.cpp ..\..\src\ymfm_adpcm.cpp ..\..\src\ymfm_pcm.cpp ..\..\src\ymfm_ssg.cpp /Od /Zi /std:c++14 /EHsc
+//   cl -I..\..\src buildall.cpp ..\..\src\ymfm_misc.cpp ..\..\src\ymfm_opl.cpp ..\..\src\ymfm_opm.cpp ..\..\src\ymfm_opn.cpp ..\..\src\ymfm_opq.cpp ..\..\src\ymfm_opz.cpp ..\..\src\ymfm_adpcm.cpp ..\..\src\ymfm_pcm.cpp ..\..\src\ymfm_ssg.cpp /Od /Zi /std:c++14 /EHsc
 //
 
 #include <vector>
 
+#include "ymfm_misc.h"
 #include "ymfm_opl.h"
 #include "ymfm_opm.h"
 #include "ymfm_opn.h"
@@ -71,6 +72,9 @@ int main(int argc, char *argv[])
 {
 	// just keep adding chip variants here as they are implemented
 
+	// ymfm_misc.h:
+	chip_wrapper<ymfm::ym2149> test2149;
+
 	// ymfm_opl.h:
 	chip_wrapper<ymfm::ym3526> test3526;
 	chip_wrapper<ymfm::y8950> test8950;
@@ -88,7 +92,6 @@ int main(int argc, char *argv[])
 	chip_wrapper<ymfm::ym2164> test2164;
 
 	// ymfm_opn.h:
-	chip_wrapper<ymfm::ym2149> test2149;
 	chip_wrapper<ymfm::ym2203> test2203;
 	chip_wrapper<ymfm::ym2608> test2608;
 	chip_wrapper<ymfm::ymf288> test288;
