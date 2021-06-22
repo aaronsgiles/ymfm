@@ -152,10 +152,6 @@ bool opm_registers::write(uint16_t index, uint8_t data, uint32_t &channel, uint3
 	else if (index != 0x1a)
 		m_regdata[index] = data;
 
-	// check test register writes for the LFO reset bit
-	if (index == 0x01 && bitfield(data, 1))
-		m_lfo_counter = 0;
-
 	// handle writes to the key on index
 	if (index == 0x08)
 	{
@@ -200,6 +196,13 @@ int32_t opm_registers::clock_noise_and_lfo()
 	// manual, though it might not be implemented exactly this way on chip
 	uint32_t rate = lfo_rate();
 	m_lfo_counter += (0x10 | bitfield(rate, 0, 4)) << bitfield(rate, 4, 4);
+
+	// bit 1 of the test register is officially undocumented but has been
+	// discovered to hold the LFO in reset while active
+	if (lfo_reset())
+		m_lfo_counter = 0;
+
+	// now pull out the non-fractional LFO value
 	uint32_t lfo = bitfield(m_lfo_counter, 22, 8);
 
 	// fill in the noise entry 1 ahead of our current position; this
