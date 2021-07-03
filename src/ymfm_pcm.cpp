@@ -425,7 +425,7 @@ void pcm_channel::load_wavetable()
 	// for some reason that is unclear
 	m_endpos = read_pcm(wavheader + 5) << 8;
 	m_endpos |= read_pcm(wavheader + 6);
-	m_endpos = -m_endpos << 16;
+	m_endpos = -(int32_t)m_endpos << 16;
 
 	// remaining data values set registers
 	m_owner.write(0x80 + m_choffs, read_pcm(wavheader + 7));
