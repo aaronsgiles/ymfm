@@ -560,9 +560,9 @@ int16_t pcm_channel::fetch_sample() const
 	// 12-bit PCM: assemble out of half of 3 bytes
 	addr += (pos / 2) * 3;
 	if ((pos & 1) == 0)
-		return (read_pcm(addr + 0) << 8) | ((read_pcm(addr + 1) << 0) & 0xf0);
+		return (read_pcm(addr + 0) << 8) | ((read_pcm(addr + 1) << 4) & 0xf0);
 	else
-		return (read_pcm(addr + 2) << 8) | ((read_pcm(addr + 1) << 4) & 0xf0);
+		return (read_pcm(addr + 2) << 8) | ((read_pcm(addr + 1) << 0) & 0xf0);
 }
 
 
