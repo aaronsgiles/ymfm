@@ -910,7 +910,6 @@ void generate_all(std::vector<uint8_t> &buffer, uint32_t data_start, uint32_t ou
 					break;
 				uint8_t type = buffer[offset++];
 				uint32_t size = parse_uint32(buffer, offset);
-				uint32_t start, length;
 				uint32_t localoffset = offset;
 
 				switch (type)
@@ -1114,7 +1113,7 @@ int write_wav(char const *filename, uint32_t output_rate, std::vector<int32_t> &
 {
 	// determine normalization parameters
 	int32_t max_scale = 0;
-	for (int index = 0; index < wav_buffer_src.size(); index++)
+	for (size_t index = 0; index < wav_buffer_src.size(); index++)
 	{
 		int32_t absval = std::abs(wav_buffer_src[index]);
 		max_scale = std::max(max_scale, absval);
@@ -1122,7 +1121,7 @@ int write_wav(char const *filename, uint32_t output_rate, std::vector<int32_t> &
 
 	// now convert
 	std::vector<int16_t> wav_buffer(wav_buffer_src.size());
-	for (int index = 0; index < wav_buffer_src.size(); index++)
+	for (size_t index = 0; index < wav_buffer_src.size(); index++)
 		wav_buffer[index] = wav_buffer_src[index] * 26000 / max_scale;
 
 	// write the WAV file
