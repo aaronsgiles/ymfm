@@ -329,7 +329,7 @@ void add_chips(uint32_t clock, chip_type type, char const *chipname)
 	{
 		char name[100];
 		sprintf(name, "%s #%d", chipname, index);
-		active_chips.push_back(new vgm_chip<ChipType>(clockval, type, chipname));
+		active_chips.push_back(new vgm_chip<ChipType>(clockval, type, (numchips == 2) ? name : chipname));
 	}
 
 	if (type == CHIP_YM2608)
