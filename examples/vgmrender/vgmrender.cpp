@@ -1119,7 +1119,9 @@ int write_wav(char const *filename, uint32_t output_rate, std::vector<int32_t> &
 		max_scale = std::max(max_scale, absval);
 	}
 
-	if (max_scale == 0) {
+	// warn if only silence was detected (and also avoid divide by zero)
+	if (max_scale == 0)
+	{
 		fprintf(stderr, "The WAV file data will only contain silence.\n");
 		max_scale = 1;
 	}
