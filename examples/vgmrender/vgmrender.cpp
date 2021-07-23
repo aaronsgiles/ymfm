@@ -1119,6 +1119,11 @@ int write_wav(char const *filename, uint32_t output_rate, std::vector<int32_t> &
 		max_scale = std::max(max_scale, absval);
 	}
 
+	if (max_scale == 0) {
+		fprintf(stderr, "The WAV file data will only contain silence.\n");
+		max_scale = 1;
+	}
+
 	// now convert
 	std::vector<int16_t> wav_buffer(wav_buffer_src.size());
 	for (size_t index = 0; index < wav_buffer_src.size(); index++)
