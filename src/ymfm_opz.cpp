@@ -280,7 +280,7 @@ bool opz_registers::write(uint16_t index, uint8_t data, uint32_t &channel, uint3
 	}
 
 	// handle writes to the key on index
-	if ((index & 0xf8) == 0x20 && bitfield(index, 0, 3) == bitfield(m_regdata[0x08], 0, 3))
+	if ((index & 0xf8) == 0x20)
 	{
 		channel = bitfield(index, 0, 3);
 		opmask = ch_key_on(channel) ? 0xf : 0;
