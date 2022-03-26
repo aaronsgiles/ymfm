@@ -1502,7 +1502,10 @@ void fm_engine_base<RegisterType>::engine_timer_expired(uint32_t tnum)
 	if (tnum == 0 && m_regs.csm())
 		for (uint32_t chnum = 0; chnum < CHANNELS; chnum++)
 			if (bitfield(RegisterType::CSM_TRIGGER_MASK, chnum))
-				m_channel[chnum]->keyonoff(1, KEYON_CSM, chnum);
+			{
+				m_channel[chnum]->keyonoff(~0, KEYON_CSM, chnum);
+				m_modified_channels |= 1 << chnum;
+			}
 
 	// reset
 	m_timer_running[tnum] = false;
