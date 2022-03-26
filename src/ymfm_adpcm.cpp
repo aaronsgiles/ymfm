@@ -462,10 +462,6 @@ void adpcm_b_channel::clock()
 	// if playing from RAM/ROM, check the end address and process
 	if (m_regs.external())
 	{
-		// wrap at the limit address
-		if (at_limit())
-			m_curaddress = 0;
-
 		// handle the sample end, either repeating or stopping
 		if (at_end())
 		{
@@ -483,6 +479,10 @@ void adpcm_b_channel::clock()
 				return;
 			}
 		}
+
+		// wrap at the limit address
+		if (at_limit())
+			m_curaddress = 0;
 
 		// if we're about to process nibble 0, fetch and increment
 		if (m_curnibble == 0)
