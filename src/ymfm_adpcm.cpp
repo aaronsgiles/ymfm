@@ -392,7 +392,7 @@ adpcm_b_channel::adpcm_b_channel(adpcm_b_engine &owner, uint32_t addrshift) :
 	m_status(STATUS_BRDY),
 	m_curnibble(0),
 	m_curbyte(0),
-	m_dummy_read(0),
+	m_read_buff(0),
 	m_position(0),
 	m_curaddress(0),
 	m_accumulator(0),
@@ -413,7 +413,7 @@ void adpcm_b_channel::reset()
 	m_status = STATUS_BRDY;
 	m_curnibble = 0;
 	m_curbyte = 0;
-	m_dummy_read = 0;
+	m_read_buff = 0;
 	m_position = 0;
 	m_curaddress = 0;
 	m_accumulator = 0;
@@ -431,7 +431,7 @@ void adpcm_b_channel::save_restore(ymfm_saved_state &state)
 	state.save_restore(m_status);
 	state.save_restore(m_curnibble);
 	state.save_restore(m_curbyte);
-	state.save_restore(m_dummy_read);
+	state.save_restore(m_read_buff);
 	state.save_restore(m_position);
 	state.save_restore(m_curaddress);
 	state.save_restore(m_accumulator);
@@ -557,18 +557,16 @@ uint8_t adpcm_b_channel::read(uint32_t regnum)
 	// register 8 reads over the bus under some conditions
 	if (regnum == 0x08 && !m_regs.execute() && !m_regs.record() && m_regs.external())
 	{
-		// two dummy reads are consumed first
-		if (m_dummy_read != 0)
 		{
-			load_start();
-			m_dummy_read--;
-		}
+			uint8_t data;
 
-		// read the data
-		else
-		{
+			result = m_read_buff & 0xff;
+
 			// read from outside of the chip
-			result = m_owner.intf().ymfm_external_read(ACCESS_ADPCM_B, m_curaddress++);
+			data = m_owner.intf().ymfm_external_read(ACCESS_ADPCM_B, m_curaddress++);
+
+			m_read_buff >>= 8;
+			m_read_buff |= data << 8;
 
 			// did we hit the end? if so, signal EOS
 			if (at_end())
@@ -597,8 +595,7 @@ uint8_t adpcm_b_channel::read(uint32_t regnum)
 
 void adpcm_b_channel::write(uint32_t regnum, uint8_t value)
 {
-	// register 0 can do a reset; also use writes here to reset the
-	// dummy read counter
+	// register 0 can do a reset
 	if (regnum == 0x00)
 	{
 		if (m_regs.execute())
@@ -629,7 +626,7 @@ void adpcm_b_channel::write(uint32_t regnum, uint8_t value)
 		if (m_regs.resetflag())
 			reset();
 		if (m_regs.external())
-			m_dummy_read = 2;
+			load_start();
 	}
 
 	// register 8 writes over the bus under some conditions
@@ -642,12 +639,8 @@ void adpcm_b_channel::write(uint32_t regnum, uint8_t value)
 		// if writing during "record", pass through as data
 		else if (!m_regs.execute() && m_regs.record() && m_regs.external())
 		{
-			// clear out dummy reads and set start address
-			if (m_dummy_read != 0)
-			{
-				load_start();
-				m_dummy_read = 0;
-			}
+			// write to outside of the chip
+			m_owner.intf().ymfm_external_write(ACCESS_ADPCM_B, m_curaddress++, value);
 
 			// did we hit the end? if so, signal EOS
 			if (at_end())
@@ -655,14 +648,22 @@ void adpcm_b_channel::write(uint32_t regnum, uint8_t value)
 				debug::log_keyon("%s\n", "ADPCM EOS");
 				m_status = STATUS_EOS | STATUS_BRDY;
 			}
-
-			// otherwise, write the data and signal ready
 			else
 			{
-				m_owner.intf().ymfm_external_write(ACCESS_ADPCM_B, m_curaddress++, value);
+				// signal ready
 				m_status = STATUS_BRDY;
 			}
+
+			// wrap at the limit address
+			if (at_limit())
+				m_curaddress = 0;
 		}
+	}
+
+	// register 2,3 set the start address and load it to the current address
+	else if (regnum == 0x02 || regnum == 0x03)
+	{
+		load_start();
 	}
 }
 

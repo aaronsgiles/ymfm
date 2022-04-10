@@ -342,17 +342,17 @@ private:
 	void load_start();
 
 	// limit checker
-	bool at_limit() const { return m_curaddress == (((m_regs.limit() + 1) << address_shift()) - 1); }
+	bool at_limit() const { return m_curaddress == (((m_regs.limit() + 1) << address_shift())); }
 
 	// end checker
-	bool at_end() const { return m_curaddress == (((m_regs.end() + 1) << address_shift()) - 1); }
+	bool at_end() const { return m_curaddress == (((m_regs.end() + 1) << address_shift())); }
 
 	// internal state
 	uint32_t const m_address_shift; // address bits shift-left
 	uint32_t m_status;              // currently playing?
 	uint32_t m_curnibble;           // index of the current nibble
 	uint32_t m_curbyte;             // current byte of data
-	uint32_t m_dummy_read;          // dummy read tracker
+	uint32_t m_read_buff;			// read buffer for external read
 	uint32_t m_position;            // current fractional position
 	uint32_t m_curaddress;          // current address
 	int32_t m_accumulator;          // accumulator
