@@ -1104,7 +1104,7 @@ uint8_t ym2608::read_status_hi()
 uint8_t ym2608::read_data_hi()
 {
 	uint8_t result = 0;
-	if (m_address < 0x10)
+	if ((m_address & 0xff) < 0x10)
 	{
 		// 00-0F: Read from ADPCM-B
 		result = m_adpcm_b.read(m_address & 0x0f);
