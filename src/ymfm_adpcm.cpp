@@ -459,48 +459,59 @@ void adpcm_b_channel::clock()
 	if (position < 0x10000)
 		return;
 
-	// if playing from RAM/ROM, check the end address and process
-	if (m_regs.external())
+	// if we're about to process nibble 0, fetch sample
+	if (m_curnibble == 0)
 	{
-		// handle the sample end, either repeating or stopping
-		if (at_end())
-		{
-			// if repeating, go back to the start
-			if (m_regs.repeat())
-				load_start();
-
-			// otherwise, done; set the EOS bit and return
-			else
-			{
-				m_accumulator = 0;
-				m_prev_accum = 0;
-				m_status = (m_status & ~STATUS_PLAYING) | STATUS_EOS;
-				debug::log_keyon("%s\n", "ADPCM EOS");
-				return;
-			}
-		}
-
-		// wrap at the limit address
-		if (at_limit())
-			m_curaddress = 0;
-
-		// if we're about to process nibble 0, fetch and increment
-		if (m_curnibble == 0)
-		{
-			m_curbyte = m_owner.intf().ymfm_external_read(ACCESS_ADPCM_B, m_curaddress++);
-			m_curaddress &= 0xffffff;
-		}
+		// playing from RAM/ROM
+		if (m_regs.external())
+			m_curbyte = m_owner.intf().ymfm_external_read(ACCESS_ADPCM_B, m_curaddress);
 	}
 
 	// extract the nibble from our current byte
 	uint8_t data = uint8_t(m_curbyte << (4 * m_curnibble)) >> 4;
 	m_curnibble ^= 1;
 
-	// if CPU-driven and we just processed the last nibble, copy the next byte and request more
-	if (m_curnibble == 0 && !m_regs.external())
+	// we just processed the last nibble
+	if (m_curnibble == 0)
 	{
-		m_curbyte = m_regs.cpudata();
-		m_status |= STATUS_BRDY;
+		// if playing from RAM/ROM, check the end/limit address or advance
+		if (m_regs.external())
+		{
+			// handle the sample end, either repeating or stopping
+			if (at_end())
+			{
+				// if repeating, go back to the start
+				if (m_regs.repeat())
+					load_start();
+
+				// otherwise, done; set the EOS bit
+				else
+				{
+					m_accumulator = 0;
+					m_prev_accum = 0;
+					m_status = (m_status & ~STATUS_PLAYING) | STATUS_EOS;
+					debug::log_keyon("%s\n", "ADPCM EOS");
+				}
+			}
+
+			// wrap at the limit address
+			else if (at_limit())
+				m_curaddress = 0;
+
+			// otherwise, advance the current address
+			else
+			{
+				m_curaddress++;
+				m_curaddress &= 0xffffff;
+			}
+		}
+
+		// if CPU-driven, copy the next byte and request more
+		else
+		{
+			m_curbyte = m_regs.cpudata();
+			m_status |= STATUS_BRDY;
+		}
 	}
 
 	// remember previous value for interpolation
