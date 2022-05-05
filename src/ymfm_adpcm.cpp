@@ -491,6 +491,7 @@ void adpcm_b_channel::clock()
 					m_prev_accum = 0;
 					m_status = (m_status & ~STATUS_PLAYING) | STATUS_EOS;
 					debug::log_keyon("%s\n", "ADPCM EOS");
+					return;
 				}
 			}
 
