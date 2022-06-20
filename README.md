@@ -1,7 +1,7 @@
 # ymfm
 
-<div style='text-align:center'>
-<img src='https://aarongiles.com/img/icon-ymfm.png'>
+<div style='text-align:center;margin:auto'>
+<img src='https://aarongiles.com/img/icon-ymfm.png' width='128px'>
 </div>
 
 [ymfm](https://github.com/aaronsgiles/ymfm) is a collection of BSD-licensed Yamaha FM sound cores (OPM, OPN, OPL, and others), written by [Aaron Giles](https://aarongiles.com)
