@@ -162,8 +162,8 @@ template<class RegisterType> class fm_engine_base;
 template<class RegisterType>
 class fm_operator
 {
-	// "quiet" value, used to optimize when we can skip doing working
-	static constexpr uint32_t EG_QUIET = 0x200;
+	// "quiet" value, used to optimize when we can skip doing work
+	static constexpr uint32_t EG_QUIET = 0x380;
 
 public:
 	// constructor

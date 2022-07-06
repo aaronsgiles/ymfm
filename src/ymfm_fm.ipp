@@ -470,15 +470,6 @@ int32_t fm_operator<RegisterType>::compute_volume(uint32_t phase, uint32_t am_of
 	// the low 10 bits of phase represents a full 2*PI period over
 	// the full sin wave
 
-#if 0
-// temporary envelope logging
-if (m_choffs == 0)
-{
-	printf("  %c@%02X:%03X", "PADSRV"[m_env_state], m_cache.eg_rate[m_env_state], envelope_attenuation(am_offset));
-	if (m_opoffs == 0x18) printf("\n");
-}
-#endif
-
 	// early out if the envelope is effectively off
 	if (m_env_attenuation > EG_QUIET)
 		return 0;
@@ -1299,24 +1290,6 @@ uint32_t fm_engine_base<RegisterType>::clock(uint32_t chanmask)
 	for (uint32_t chnum = 0; chnum < CHANNELS; chnum++)
 		if (bitfield(chanmask, chnum))
 			m_channel[chnum]->clock(m_env_counter, lfo_raw_pm);
-
-#if 0
-//Temporary debugging...
-static double curtime = 0;
-//for (uint32_t chnum = 0; chnum < CHANNELS; chnum++)
-uint32_t chnum = 4;
-{
-	printf("t=%.4f ch%d: ", curtime, chnum);
-	for (uint32_t opnum = 0; opnum < 4; opnum++)
-	{
-		auto op = debug_channel(chnum)->debug_operator(opnum);
-		auto eg_state = op->debug_eg_state();
-		printf(" %c%03X[%02X]%c ", "PADSRV"[eg_state], op.debug_eg_attenuation(), op.debug_cache().eg_rate[eg_state], m_regs.op_ssg_eg_enable(op.opoffs()) ? '*' : ' ');
-	}
-	printf(" -- ");
-}
-curtime += 1.0 / double(sample_rate(7670454));
-#endif
 
 	// return the envelope counter as it is used to clock ADPCM-A
 	return m_env_counter;
