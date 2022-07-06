@@ -937,7 +937,8 @@ void fm_channel<RegisterType>::output_2op(output_data &output, uint32_t rshift, 
 	}
 	else
 	{
-		result = op1value + (m_op[1]->compute_volume(m_op[1]->phase(), am_offset) >> rshift);
+		result = (RegisterType::MODULATOR_DELAY ? m_feedback[1] : op1value) >> rshift;
+		result += m_op[1]->compute_volume(m_op[1]->phase(), am_offset) >> rshift;
 		int32_t clipmin = -clipmax - 1;
 		result = clamp(result, clipmin, clipmax);
 	}
