@@ -342,10 +342,10 @@ private:
 	void load_start();
 
 	// limit checker
-	bool at_limit() const { return (m_curaddress >> address_shift()) >= m_regs.limit(); }
+	bool at_limit() const { return m_curaddress == ((m_regs.limit() << address_shift()) | ((1 << address_shift()) - 1)); }
 
 	// end checker
-	bool at_end() const { return (m_curaddress >> address_shift()) > m_regs.end(); }
+	bool at_end() const { return m_curaddress == ((m_regs.end() << address_shift()) | ((1 << address_shift()) - 1)); }
 
 	// internal state
 	uint32_t const m_address_shift; // address bits shift-left
