@@ -564,18 +564,27 @@ uint8_t adpcm_b_channel::read(uint32_t regnum)
 			m_dummy_read--;
 		}
 
-		// did we hit the end? if so, signal EOS
-		if (at_end())
-		{
-			m_status = STATUS_EOS | STATUS_BRDY;
-			debug::log_keyon("%s\n", "ADPCM EOS");
-		}
-
-		// otherwise, write the data and signal ready
+		// read the data
 		else
 		{
+			// read from outside of the chip
 			result = m_owner.intf().ymfm_external_read(ACCESS_ADPCM_B, m_curaddress++);
-			m_status = STATUS_BRDY;
+
+			// did we hit the end? if so, signal EOS
+			if (at_end())
+			{
+				m_status = STATUS_EOS | STATUS_BRDY;
+				debug::log_keyon("%s\n", "ADPCM EOS");
+			}
+			else
+			{
+				// signal ready
+				m_status = STATUS_BRDY;
+			}
+
+			// wrap at the limit address
+			if (at_limit())
+				m_curaddress = 0;
 		}
 	}
 	return result;
