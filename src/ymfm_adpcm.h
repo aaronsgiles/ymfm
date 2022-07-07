@@ -300,19 +300,22 @@ private:
 
 class adpcm_b_channel
 {
-	friend class adpcm_tester;
-
 	static constexpr int32_t STEP_MIN = 127;
 	static constexpr int32_t STEP_MAX = 24576;
 
 public:
-	static constexpr uint8_t STATUS_EOS = 0x01;
-	static constexpr uint8_t STATUS_BRDY = 0x02;
-	static constexpr uint8_t STATUS_PLAYING = 0x04;
-	static constexpr uint8_t STATUS_EXTERNAL = STATUS_EOS | STATUS_BRDY | STATUS_PLAYING;
+	// publicly visible status bits
+	static constexpr uint32_t STATUS_EOS = 0x01;
+	static constexpr uint32_t STATUS_BRDY = 0x02;
+	static constexpr uint32_t STATUS_PLAYING = 0x04;
 
-	static constexpr uint8_t STATUS_INTERNAL_DRAIN = 0x08;
+private:
+	// internal status bits
+	static constexpr uint32_t STATUS_EXTERNAL = STATUS_EOS | STATUS_BRDY | STATUS_PLAYING;
+	static constexpr uint32_t STATUS_INTERNAL_DRAIN = 0x08;
+	static constexpr uint32_t STATUS_INTERNAL_PLAYING = 0x10;
 
+public:
 	// constructor
 	adpcm_b_channel(adpcm_b_engine &owner, uint32_t addrshift);
 
@@ -343,7 +346,7 @@ public:
 
 private:
 	// update the status register
-	void set_reset_status(uint8_t set, uint8_t reset = 0) { m_status = (m_status & ~reset) | set; }
+	void set_reset_status(uint32_t set, uint32_t reset = 0) { m_status = (m_status & ~reset) | set; }
 
 	// return the current address shift
 	uint32_t address_shift() const;
@@ -374,8 +377,6 @@ private:
 
 class adpcm_b_engine
 {
-	friend class adpcm_tester;
-
 public:
 	// constructor
 	adpcm_b_engine(ymfm_interface &intf, uint32_t addrshift = 0);
