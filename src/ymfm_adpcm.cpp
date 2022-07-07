@@ -447,11 +447,11 @@ void adpcm_b_channel::save_restore(ymfm_saved_state &state)
 void adpcm_b_channel::clock()
 {
 	// only process if active and not recording (which we don't support)
-	if (!m_regs.execute() || m_regs.record() || m_regs.resetflag() || (m_status & STATUS_PLAYING) == 0)
+	if (!m_regs.execute() || m_regs.record() || (m_status & STATUS_INTERNAL_PLAYING) == 0)
 	{
 		m_prev_output = m_output;
 		m_position = 0;
-		set_reset_status(0, STATUS_PLAYING);
+		set_reset_status(0, STATUS_INTERNAL_PLAYING);
 		return;
 	}
 
@@ -497,12 +497,12 @@ void adpcm_b_channel::clock()
 
 			// clear playing flag if we're not repeating
 			if (!m_regs.repeat())
-				set_reset_status(0, STATUS_PLAYING);
+				set_reset_status(0, STATUS_INTERNAL_PLAYING);
 		}
 	}
 
 	// if we don't have at least 3 nibbles in the buffer, request more data
-	if ((m_status & STATUS_PLAYING) != 0 && m_nibbles < 3)
+	if ((m_status & STATUS_INTERNAL_PLAYING) != 0 && m_nibbles < 3)
 	{
 		// if we hit the end address after this fetch, handle looping/ending
 		if (request_data())
@@ -609,15 +609,16 @@ void adpcm_b_channel::write(uint32_t regnum, uint8_t value)
 	// dummy read counter
 	if (regnum == 0x00)
 	{
-		// reset flag stops playback and holds output, but does not clear the playing flag
+		// reset flag stops playback and holds output, but does not clear the
+		// externally-visible playing flag
 		if (m_regs.resetflag())
-			set_reset_status(STATUS_EOS);
+			set_reset_status(STATUS_EOS, STATUS_INTERNAL_PLAYING);
 
 		// all other modes set up for an operation
 		else
 		{
-			// initialize the core state
-			set_reset_status(STATUS_BRDY, STATUS_PLAYING | STATUS_EOS | STATUS_INTERNAL_DRAIN);
+			// initialize the core state; appears to leave EOS flag alone until next execute
+			set_reset_status(STATUS_BRDY, STATUS_PLAYING | STATUS_INTERNAL_DRAIN | STATUS_INTERNAL_PLAYING);
 			m_curaddress = m_regs.external() ? (m_regs.start() << address_shift()) : 0;
 			m_buffer = 0;
 			m_nibbles = 4;
@@ -630,7 +631,7 @@ void adpcm_b_channel::write(uint32_t regnum, uint8_t value)
 			// if playing, set the playing status
 			if (m_regs.execute())
 			{
-				set_reset_status(STATUS_PLAYING);
+				set_reset_status(STATUS_PLAYING | STATUS_INTERNAL_PLAYING, STATUS_EOS);
 				m_nibbles = 0;
 
 				// don't log masked channels
@@ -660,7 +661,7 @@ void adpcm_b_channel::write(uint32_t regnum, uint8_t value)
 	{
 		// if writing from the CPU during execute, clear the ready flag
 		if (m_regs.execute() && !m_regs.record() && !m_regs.external())
-			m_status &= ~STATUS_BRDY;
+			set_reset_status(0, STATUS_BRDY);
 
 		// if writing during "record", pass through as data
 		else if (!m_regs.execute() && m_regs.record() && m_regs.external())
