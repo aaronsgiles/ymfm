@@ -448,6 +448,8 @@ void fm_operator<RegisterType>::clock(uint32_t env_counter, int32_t lfo_raw_pm)
 	// clock the SSG-EG state (OPN/OPNA)
 	if (m_regs.op_ssg_eg_enable(m_opoffs))
 		clock_ssg_eg_state();
+	else
+		m_ssg_inverted = false;
 
 	// clock the envelope if on an envelope cycle; env_counter is a x.2 value
 	if (bitfield(env_counter, 0, 2) == 0)
