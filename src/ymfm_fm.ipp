@@ -883,6 +883,23 @@ void fm_channel<RegisterType>::clock(uint32_t env_counter, int32_t lfo_raw_pm)
 	for (uint32_t opnum = 0; opnum < array_size(m_op); opnum++)
 		if (m_op[opnum] != nullptr)
 			m_op[opnum]->clock(env_counter, lfo_raw_pm);
+
+/*
+useful temporary code for envelope debugging
+if (m_choffs == 0x101)
+{
+	for (uint32_t opnum = 0; opnum < array_size(m_op); opnum++)
+	{
+		auto &op = *m_op[((opnum & 1) << 1) | ((opnum >> 1) & 1)];
+		printf(" %c%03X%c%c ",
+			"PADSRV"[op.debug_eg_state()],
+			op.debug_eg_attenuation(),
+			op.debug_ssg_inverted() ? '-' : '+',
+			m_regs.op_ssg_eg_enable(op.opoffs()) ? '0' + m_regs.op_ssg_eg_mode(op.opoffs()) : ' ');
+	}
+printf(" -- ");
+}
+*/
 }
 
 

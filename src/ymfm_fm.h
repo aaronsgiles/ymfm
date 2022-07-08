@@ -206,6 +206,7 @@ public:
 	// simple getters for debugging
 	envelope_state debug_eg_state() const { return m_env_state; }
 	uint16_t debug_eg_attenuation() const { return m_env_attenuation; }
+	uint8_t debug_ssg_inverted() const { return m_ssg_inverted; }
 	opdata_cache &debug_cache() { return m_cache; }
 
 private:
