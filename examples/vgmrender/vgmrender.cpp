@@ -9,7 +9,7 @@
 //
 // or:
 //
-//   clang --std=c++14 -I../../src vgmrender.cpp em_inflate.cpp ../../src/ymfm_misc.cpp ../../src/ymfm_opl.cpp ../../src/ymfm_opm.cpp ../../src/ymfm_opn.cpp ../../src/ymfm_adpcm.cpp ../../src/ymfm_pcm.cpp ../../src/ymfm_ssg.cpp -o vgmrender.exe
+//   clang++ --std=c++14 -I../../src vgmrender.cpp em_inflate.cpp ../../src/ymfm_misc.cpp ../../src/ymfm_opl.cpp ../../src/ymfm_opm.cpp ../../src/ymfm_opn.cpp ../../src/ymfm_adpcm.cpp ../../src/ymfm_pcm.cpp ../../src/ymfm_ssg.cpp -o vgmrender.exe
 //
 // or:
 //
@@ -32,6 +32,10 @@
 #include "ymfm_opn.h"
 
 #define LOG_WRITES (0)
+
+// run this many dummy clocks of each chip before generating
+#define EXTRA_CLOCKS (0)
+
 
 // enable this to run the nuked OPN2 core in parallel; output is not captured,
 // but logging can be added to observe behaviors
@@ -149,12 +153,19 @@ public:
 		m_pos(0)
 	{
 		m_chip.reset();
+
+		for (int clock = 0; clock < EXTRA_CLOCKS; clock++)
+			m_chip.generate(&m_output);
+
 #if (RUN_NUKED_OPN2)
 		if (type == CHIP_YM2612)
 		{
 			m_external = new nuked::ym3438_t;
 			nuked::OPN2_SetChipType(nuked::ym3438_mode_ym2612);
 			nuked::OPN2_Reset(m_external);
+			nuked::Bit16s buffer[2];
+			for (int clocks = 0; clocks < 24 * EXTRA_CLOCKS; clocks++)
+				nuked::OPN2_Clock(m_external, buffer);
 		}
 #endif
 	}
@@ -256,8 +267,8 @@ public:
 		}
 		else if (m_type == CHIP_YMF278B)
 		{
-			*buffer++ += m_output.data[4];
-			*buffer++ += m_output.data[5];
+			*buffer++ += m_output.data[4 % ChipType::OUTPUTS];
+			*buffer++ += m_output.data[5 % ChipType::OUTPUTS];
 		}
 		else if (ChipType::OUTPUTS == 1)
 		{
