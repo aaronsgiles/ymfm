@@ -580,31 +580,23 @@ uint8_t adpcm_b_channel::read(uint32_t regnum)
 		else
 		{
 			// read from outside of the chip
-			result = m_owner.intf().ymfm_external_read(ACCESS_ADPCM_B, m_curaddress);
+			result = m_owner.intf().ymfm_external_read(ACCESS_ADPCM_B, m_curaddress++);
 
 			// did we hit the end? if so, signal EOS
 			if (at_end())
 			{
-				m_dummy_read = 2;
 				m_status = STATUS_EOS | STATUS_BRDY;
 				debug::log_keyon("%s\n", "ADPCM EOS");
 			}
 			else
 			{
-				// wrap at the limit address
-				if (at_limit())
-					m_curaddress = 0;
-
-				// advance the current address
-				else
-				{
-					m_curaddress++;
-					m_curaddress &= 0xffffff;
-				}
-
 				// signal ready
 				m_status = STATUS_BRDY;
 			}
+
+			// wrap at the limit address
+			if (at_limit())
+				m_curaddress = 0;
 		}
 	}
 	return result;
@@ -669,30 +661,17 @@ void adpcm_b_channel::write(uint32_t regnum, uint8_t value)
 				m_dummy_read = 0;
 			}
 
-			// write the data and signal ready
-			m_owner.intf().ymfm_external_write(ACCESS_ADPCM_B, m_curaddress, value);
-
 			// did we hit the end? if so, signal EOS
 			if (at_end())
 			{
-				m_dummy_read = 2;
-				m_status = STATUS_EOS | STATUS_BRDY;
 				debug::log_keyon("%s\n", "ADPCM EOS");
+				m_status = STATUS_EOS | STATUS_BRDY;
 			}
+
+			// otherwise, write the data and signal ready
 			else
 			{
-				// wrap at the limit address
-				if (at_limit())
-					m_curaddress = 0;
-
-				// advance the current address
-				else
-				{
-					m_curaddress++;
-					m_curaddress &= 0xffffff;
-				}
-
-				// signal ready
+				m_owner.intf().ymfm_external_write(ACCESS_ADPCM_B, m_curaddress++, value);
 				m_status = STATUS_BRDY;
 			}
 		}
