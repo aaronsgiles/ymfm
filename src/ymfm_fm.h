@@ -33,6 +33,8 @@
 
 #pragma once
 
+#include <deque>
+
 namespace ymfm
 {
 
@@ -108,12 +110,14 @@ public:
 	//        uint8_t STATUS_IRQ: Status bit to set when an IRQ is signalled
 	//
 	// the following constants are uncommon:
+	//           int WRITE_DELAY: Number of samples to delay writes by
 	//          bool DYNAMIC_OPS: True if ops/channel can be changed at runtime (OPL3+)
 	//       bool EG_HAS_DEPRESS: True if the chip has a DP ("depress"?) envelope stage (OPLL)
 	//        bool EG_HAS_REVERB: True if the chip has a faux reverb envelope stage (OPQ/OPZ)
 	//           bool EG_HAS_SSG: True if the chip has SSG envelope support (OPN)
 	//      bool MODULATOR_DELAY: True if the modulator is delayed by 1 sample (OPL pre-OPL3)
 	//
+	static constexpr int WRITE_DELAY = 2;
 	static constexpr bool DYNAMIC_OPS = false;
 	static constexpr bool EG_HAS_DEPRESS = false;
 	static constexpr bool EG_HAS_REVERB = false;
@@ -165,6 +169,18 @@ class fm_operator
 	// "quiet" value, used to optimize when we can skip doing work
 	static constexpr uint32_t EG_QUIET = 0x380;
 
+	// special values for m_env_prev to indicate start of attack/release; this is done
+	// so that the check for m_env_attenuation == m_env_prev will fail and force an
+	// update of the EG state
+	static constexpr uint16_t PREV_SPECIAL = 0x8000;
+	static constexpr uint16_t PREV_DEPRESS = PREV_SPECIAL + 1;
+	static constexpr uint16_t PREV_ATTACK = PREV_SPECIAL + 2;
+	static constexpr uint16_t PREV_RESTART = PREV_SPECIAL + 3;
+	static constexpr uint16_t PREV_RELEASE = PREV_SPECIAL + 4;
+
+	// PREV_REFRESH is set to just force a refresh
+	static constexpr uint16_t PREV_REFRESH = PREV_SPECIAL - 1;
+
 public:
 	// constructor
 	fm_operator(fm_engine_base<RegisterType> &owner, uint32_t opoffs);
@@ -210,16 +226,11 @@ public:
 	opdata_cache &debug_cache() { return m_cache; }
 
 private:
-	// start the attack phase
-	void start_attack(bool is_restart = false);
-
-	// start the release phase
-	void start_release();
-
 	// clock phases
 	void clock_keystate(uint32_t keystate);
 	void clock_ssg_eg_state();
-	void clock_envelope(uint32_t env_counter);
+	bool clock_envelope_state();
+	void clock_envelope_increment(uint32_t env_counter);
 	void clock_phase(int32_t lfo_raw_pm);
 
 	// return effective attenuation of the envelope
@@ -230,6 +241,7 @@ private:
 	uint32_t m_opoffs;                     // operator offset in registers
 	uint32_t m_phase;                      // current phase value (10.10 format)
 	uint16_t m_env_attenuation;            // computed envelope attenuation (4.6 format)
+	uint16_t m_env_prev;                   // previous attenuation, or special value
 	envelope_state m_env_state;            // current envelope state
 	uint8_t m_ssg_inverted;                // non-zero if the output should be inverted (bit 0)
 	uint8_t m_key_state;                   // current key state: on or off (bit 0)
@@ -423,11 +435,17 @@ public:
 	virtual void engine_mode_write(uint8_t data) override;
 
 protected:
+	// process pending writes
+	void process_pending_writes();
+
 	// assign the current set of operators to channels
 	void assign_operators();
 
 	// update the state of the given timer
 	void update_timer(uint32_t which, uint32_t enable, int32_t delta_clocks);
+
+	// small structure to describe a pending write
+	struct pending_write { uint16_t regnum; uint8_t data; uint8_t clock; };
 
 	// internal state
 	ymfm_interface &m_intf;          // reference to the system interface
@@ -442,6 +460,7 @@ protected:
 	uint32_t m_modified_channels;    // mask of channels that have been modified
 	uint32_t m_prepare_count;        // counter to do periodic prepare sweeps
 	RegisterType m_regs;             // register accessor
+	std::deque<pending_write> m_pending_writes; // pending writes
 	std::unique_ptr<fm_channel<RegisterType>> m_channel[CHANNELS]; // channel pointers
 	std::unique_ptr<fm_operator<RegisterType>> m_operator[OPERATORS]; // operator pointers
 };

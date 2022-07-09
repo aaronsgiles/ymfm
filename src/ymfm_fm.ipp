@@ -376,6 +376,7 @@ fm_operator<RegisterType>::fm_operator(fm_engine_base<RegisterType> &owner, uint
 	m_opoffs(opoffs),
 	m_phase(0),
 	m_env_attenuation(0x3ff),
+	m_env_prev(PREV_REFRESH),
 	m_env_state(EG_RELEASE),
 	m_ssg_inverted(false),
 	m_key_state(0),
@@ -396,6 +397,7 @@ void fm_operator<RegisterType>::reset()
 	// reset our data
 	m_phase = 0;
 	m_env_attenuation = 0x3ff;
+	m_env_prev = PREV_REFRESH;
 	m_env_state = EG_RELEASE;
 	m_ssg_inverted = 0;
 	m_key_state = 0;
@@ -416,6 +418,7 @@ void fm_operator<RegisterType>::save_restore(ymfm_saved_state &state)
 	state.save_restore(m_ssg_inverted);
 	state.save_restore(m_key_state);
 	state.save_restore(m_keyon_live);
+	m_env_prev = PREV_REFRESH;
 }
 
 
@@ -434,7 +437,7 @@ bool fm_operator<RegisterType>::prepare()
 	m_keyon_live &= ~(1 << KEYON_CSM);
 
 	// we're active until we're quiet after the release
-	return (m_env_state != (RegisterType::EG_HAS_REVERB ? EG_REVERB : EG_RELEASE) || m_env_attenuation < EG_QUIET);
+	return (m_env_state != (RegisterType::EG_HAS_REVERB ? EG_REVERB : EG_RELEASE) || m_env_attenuation < EG_QUIET || (m_env_prev & PREV_SPECIAL) != 0);
 }
 
 
@@ -451,9 +454,10 @@ void fm_operator<RegisterType>::clock(uint32_t env_counter, int32_t lfo_raw_pm)
 	else
 		m_ssg_inverted = false;
 
-	// clock the envelope if on an envelope cycle; env_counter is a x.2 value
-	if (bitfield(env_counter, 0, 2) == 0)
-		clock_envelope(env_counter >> 2);
+	// clock the envelope state every cycle; if no state transition,
+	// then potentially clock the increment
+	if (!clock_envelope_state() && bitfield(env_counter, 0, 2) == 0)
+		clock_envelope_increment(env_counter >> 2);
 
 	// clock the phase
 	clock_phase(lfo_raw_pm);
@@ -523,61 +527,6 @@ void fm_operator<RegisterType>::keyonoff(uint32_t on, keyon_type type)
 
 
 //-------------------------------------------------
-//  start_attack - start the attack phase; called
-//  when a keyon happens or when an SSG-EG cycle
-//  is complete and restarts
-//-------------------------------------------------
-
-template<class RegisterType>
-void fm_operator<RegisterType>::start_attack(bool is_restart)
-{
-	// don't change anything if already in attack state
-	if (m_env_state == EG_ATTACK)
-		return;
-	m_env_state = EG_ATTACK;
-
-	// generally not inverted at start, except if SSG-EG is enabled and
-	// one of the inverted modes is specified; leave this alone on a
-	// restart, as it is managed by the clock_ssg_eg_state() code
-	if (RegisterType::EG_HAS_SSG && !is_restart)
-		m_ssg_inverted = m_regs.op_ssg_eg_enable(m_opoffs) & bitfield(m_regs.op_ssg_eg_mode(m_opoffs), 2);
-
-	// reset the phase when we start an attack due to a key on
-	// (but not when due to an SSG-EG restart except in certain cases
-	// managed directly by the SSG-EG code)
-	if (!is_restart)
-		m_phase = 0;
-
-	// if the attack rate >= 62 then immediately go to max attenuation
-	if (m_cache.eg_rate[EG_ATTACK] >= 62)
-		m_env_attenuation = 0;
-}
-
-
-//-------------------------------------------------
-//  start_release - start the release phase;
-//  called when a keyoff happens
-//-------------------------------------------------
-
-template<class RegisterType>
-void fm_operator<RegisterType>::start_release()
-{
-	// don't change anything if already in release state
-	if (m_env_state >= EG_RELEASE)
-		return;
-	m_env_state = EG_RELEASE;
-
-	// if attenuation if inverted due to SSG-EG, snap the inverted attenuation
-	// as the starting point
-	if (RegisterType::EG_HAS_SSG && m_ssg_inverted)
-	{
-		m_env_attenuation = (0x200 - m_env_attenuation) & 0x3ff;
-		m_ssg_inverted = false;
-	}
-}
-
-
-//-------------------------------------------------
 //  clock_keystate - clock the keystate to match
 //  the incoming keystate
 //-------------------------------------------------
@@ -592,20 +541,14 @@ void fm_operator<RegisterType>::clock_keystate(uint32_t keystate)
 	{
 		m_key_state = keystate;
 
-		// if the key has turned on, start the attack
+		// if the key has turned on, start the attack; OPLL has a DP ("depress"?) state
+		// to bring the volume down before starting the attack
 		if (keystate != 0)
-		{
-			// OPLL has a DP ("depress"?) state to bring the volume
-			// down before starting the attack
-			if (RegisterType::EG_HAS_DEPRESS && m_env_attenuation < 0x200)
-				m_env_state = EG_DEPRESS;
-			else
-				start_attack();
-		}
+			m_env_prev = (RegisterType::EG_HAS_DEPRESS && m_env_attenuation < 0x200) ? PREV_DEPRESS : PREV_ATTACK;
 
 		// otherwise, start the release
 		else
-			start_release();
+			m_env_prev = PREV_RELEASE;
 	}
 }
 
@@ -653,7 +596,7 @@ void fm_operator<RegisterType>::clock_ssg_eg_state()
 
 		// restart attack if in decay/sustain states
 		if (m_env_state == EG_DECAY || m_env_state == EG_SUSTAIN)
-			start_attack(true);
+			m_env_prev = PREV_RESTART;
 
 		// phase is reset to 0 in modes 0/4
 		if (bitfield(mode, 1) == 0)
@@ -667,16 +610,102 @@ void fm_operator<RegisterType>::clock_ssg_eg_state()
 
 
 //-------------------------------------------------
-//  clock_envelope - clock the envelope state
-//  according to the given count
+//  clock_envelope_state - update the state
+//  based on current conditions
 //-------------------------------------------------
 
 template<class RegisterType>
-void fm_operator<RegisterType>::clock_envelope(uint32_t env_counter)
+bool fm_operator<RegisterType>::clock_envelope_state()
 {
+	// if the attenuation matches the last time, nothing to do; note that m_env_prev
+	// may be set to special values to cause this check to fail and thus force
+	// execution of the logic below
+	if (m_env_attenuation == m_env_prev)
+		return false;
+
+	// remember the previous value and make it match
+	auto prev = m_env_prev;
+	m_env_prev = m_env_attenuation;
+
+	// special values for the previous initiate attack/release
+	if ((prev & PREV_SPECIAL) != 0)
+	{
+		// depress -- not sure if it suppresses envelope increment; assume no for now
+		if (RegisterType::EG_HAS_DEPRESS && prev == PREV_DEPRESS)
+		{
+			m_env_state = EG_DEPRESS;
+			return false;
+		}
+
+		// start of attack; ignore if already in attack state
+		else if (prev == PREV_ATTACK && m_env_state != EG_ATTACK)
+		{
+			// generally not inverted at start, except if SSG-EG is enabled and
+			// one of the inverted modes is specified
+			if (RegisterType::EG_HAS_SSG)
+			{
+				m_ssg_inverted = m_regs.op_ssg_eg_enable(m_opoffs) & bitfield(m_regs.op_ssg_eg_mode(m_opoffs), 2);
+				if (m_regs.op_ssg_eg_enable(m_opoffs))
+					printf("Inverted=%d mode=%d\n", m_ssg_inverted, m_regs.op_ssg_eg_mode(m_opoffs));
+			}
+
+			// reset the phase when we start an attack due to a key on
+			m_phase = 0;
+
+			// if the attack rate >= 62 then immediately go to max attenuation
+			if (m_cache.eg_rate[EG_ATTACK] >= 62)
+				m_env_attenuation = 0;
+
+			// change to attack state but do not apply increment this cycle
+			m_env_state = EG_ATTACK;
+			return true;
+		}
+
+		// restart during SSG
+		else if (prev == PREV_RESTART && m_env_state != EG_ATTACK)
+		{
+			// unlike a normal attack, do not touch the inverted state or the phase
+
+			// if the attack rate >= 62 then immediately go to max attenuation
+			if (m_cache.eg_rate[EG_ATTACK] >= 62)
+				m_env_attenuation = 0;
+
+			// change to attack state but do not apply increment this cycle
+			m_env_state = EG_ATTACK;
+			return true;
+		}
+
+		// release
+		else if (prev == PREV_RELEASE && m_env_state < EG_RELEASE)
+		{
+			// if attenuation if inverted due to SSG-EG, snap the inverted attenuation
+			// as the starting point
+			if (RegisterType::EG_HAS_SSG && m_ssg_inverted)
+			{
+				m_env_attenuation = (0x200 - m_env_attenuation) & 0x3ff;
+				m_ssg_inverted = false;
+			}
+
+			// change to release state but do not apply increment this cycle
+			m_env_state = EG_RELEASE;
+			return true;
+		}
+	}
+
+	// transition from depress to attack
+	if (RegisterType::EG_HAS_DEPRESS && m_env_state == EG_DEPRESS && m_env_attenuation >= 0x200)
+	{
+		// set the attack trigger and re-run the code
+		m_env_prev = PREV_ATTACK;
+		return clock_envelope_state();
+	}
+
 	// handle attack->decay transitions
 	if (m_env_state == EG_ATTACK && m_env_attenuation == 0)
+	{
 		m_env_state = EG_DECAY;
+		return true;
+	}
 
 	// handle decay->sustain transitions; it is important to do this immediately
 	// after the attack->decay transition above in the event that the sustain level
@@ -684,8 +713,33 @@ void fm_operator<RegisterType>::clock_envelope(uint32_t env_counter)
 	// decay); as an example where this can be heard, check the cymbals sound
 	// in channel 0 of shinobi's test mode sound #5
 	if (m_env_state == EG_DECAY && m_env_attenuation >= m_cache.eg_sustain)
+	{
 		m_env_state = EG_SUSTAIN;
+		return true;
+	}
 
+	// transition from release to reverb, should switch at -18dB
+	if (RegisterType::EG_HAS_REVERB && m_env_state == EG_RELEASE && m_env_attenuation >= 0xc0)
+	{
+		m_env_state = EG_REVERB;
+		return true;
+	}
+
+	// nothing special happened; allow normal increment
+	return false;
+}
+
+
+//-------------------------------------------------
+//  clock_envelope_increment - clock the envelope
+//  increment; this only happens every
+//  EG_CLOCK_DIVIDER clocks, and may be suppressed
+//  on a state change
+//-------------------------------------------------
+
+template<class RegisterType>
+void fm_operator<RegisterType>::clock_envelope_increment(uint32_t env_counter)
+{
 	// fetch the appropriate 6-bit rate value from the cache
 	uint32_t rate = m_cache.eg_rate[m_env_state];
 
@@ -728,14 +782,6 @@ void fm_operator<RegisterType>::clock_envelope(uint32_t env_counter)
 		// clamp the final attenuation
 		if (m_env_attenuation >= 0x400)
 			m_env_attenuation = 0x3ff;
-
-		// transition from depress to attack
-		if (RegisterType::EG_HAS_DEPRESS && m_env_state == EG_DEPRESS && m_env_attenuation >= 0x200)
-			start_attack();
-
-		// transition from release to reverb, should switch at -18dB
-		if (RegisterType::EG_HAS_REVERB && m_env_state == EG_RELEASE && m_env_attenuation >= 0xc0)
-			m_env_state = EG_REVERB;
 	}
 }
 
@@ -885,7 +931,7 @@ void fm_channel<RegisterType>::clock(uint32_t env_counter, int32_t lfo_raw_pm)
 			m_op[opnum]->clock(env_counter, lfo_raw_pm);
 
 /*
-useful temporary code for envelope debugging
+// useful temporary code for envelope debugging
 if (m_choffs == 0x101)
 {
 	for (uint32_t opnum = 0; opnum < array_size(m_op); opnum++)
@@ -1310,6 +1356,9 @@ uint32_t fm_engine_base<RegisterType>::clock(uint32_t chanmask)
 		if (bitfield(chanmask, chnum))
 			m_channel[chnum]->clock(m_env_counter, lfo_raw_pm);
 
+	// finally, process any pending writes
+	process_pending_writes();
+
 	// return the envelope counter as it is used to clock ADPCM-A
 	return m_env_counter;
 }
@@ -1389,28 +1438,10 @@ void fm_engine_base<RegisterType>::write(uint16_t regnum, uint8_t data)
 		return;
 	}
 
-	// for now just mark all channels as modified
-	m_modified_channels = ALL_CHANNELS;
-
-	// most writes are passive, consumed only when needed
-	uint32_t keyon_channel;
-	uint32_t keyon_opmask;
-	if (m_regs.write(regnum, data, keyon_channel, keyon_opmask))
-	{
-		// handle writes to the keyon register(s)
-		if (keyon_channel < CHANNELS)
-		{
-			// normal channel on/off
-			m_channel[keyon_channel]->keyonoff(keyon_opmask, KEYON_NORMAL, keyon_channel);
-		}
-		else if (CHANNELS >= 9 && keyon_channel == RegisterType::RHYTHM_CHANNEL)
-		{
-			// special case for the OPL rhythm channels
-			m_channel[6]->keyonoff(bitfield(keyon_opmask, 4) ? 3 : 0, KEYON_RHYTHM, 6);
-			m_channel[7]->keyonoff(bitfield(keyon_opmask, 0) | (bitfield(keyon_opmask, 3) << 1), KEYON_RHYTHM, 7);
-			m_channel[8]->keyonoff(bitfield(keyon_opmask, 2) | (bitfield(keyon_opmask, 1) << 1), KEYON_RHYTHM, 8);
-		}
-	}
+	// everything else gets added to the pending write queue
+	m_pending_writes.push_back({ regnum, data, uint8_t(m_total_clocks + RegisterType::WRITE_DELAY) });
+	if (RegisterType::WRITE_DELAY == 0)
+		process_pending_writes();
 }
 
 
@@ -1423,6 +1454,52 @@ template<class RegisterType>
 uint8_t fm_engine_base<RegisterType>::status() const
 {
 	return m_status & ~STATUS_BUSY & ~m_regs.status_mask();
+}
+
+
+//-------------------------------------------------
+//  process_pending_writes - process any pending
+//  writes
+//-------------------------------------------------
+
+template<class RegisterType>
+void fm_engine_base<RegisterType>::process_pending_writes()
+{
+	// nothing to do if empty
+	if (m_pending_writes.empty())
+		return;
+
+	// for now just mark all channels as modified
+	m_modified_channels = ALL_CHANNELS;
+
+	// loop until drained
+	uint8_t curclock = uint8_t(m_total_clocks);
+	while (!m_pending_writes.empty() && m_pending_writes.front().clock == curclock)
+	{
+		// grab the next one
+		auto write = m_pending_writes.front();
+		m_pending_writes.pop_front();
+
+		// most writes are passive, consumed only when needed
+		uint32_t keyon_channel;
+		uint32_t keyon_opmask;
+		if (m_regs.write(write.regnum, write.data, keyon_channel, keyon_opmask))
+		{
+			// handle writes to the keyon register(s)
+			if (keyon_channel < CHANNELS)
+			{
+				// normal channel on/off
+				m_channel[keyon_channel]->keyonoff(keyon_opmask, KEYON_NORMAL, keyon_channel);
+			}
+			else if (CHANNELS >= 9 && keyon_channel == RegisterType::RHYTHM_CHANNEL)
+			{
+				// special case for the OPL rhythm channels
+				m_channel[6]->keyonoff(bitfield(keyon_opmask, 4) ? 3 : 0, KEYON_RHYTHM, 6);
+				m_channel[7]->keyonoff(bitfield(keyon_opmask, 0) | (bitfield(keyon_opmask, 3) << 1), KEYON_RHYTHM, 7);
+				m_channel[8]->keyonoff(bitfield(keyon_opmask, 2) | (bitfield(keyon_opmask, 1) << 1), KEYON_RHYTHM, 8);
+			}
+		}
+	}
 }
 
 
