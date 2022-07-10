@@ -612,7 +612,7 @@ void adpcm_b_channel::write(uint32_t regnum, uint8_t value)
 		// reset flag stops playback and holds output, but does not clear the
 		// externally-visible playing flag
 		if (m_regs.resetflag())
-			set_reset_status(STATUS_EOS, STATUS_INTERNAL_PLAYING);
+			set_reset_status(STATUS_BRDY | (((m_status & STATUS_INTERNAL_PLAYING) != 0) ? STATUS_EOS : 0), STATUS_INTERNAL_PLAYING);
 
 		// all other modes set up for an operation
 		else
@@ -620,7 +620,7 @@ void adpcm_b_channel::write(uint32_t regnum, uint8_t value)
 			// initialize the core state; appears to leave EOS flag alone until next execute
 			set_reset_status(STATUS_BRDY, STATUS_PLAYING | STATUS_INTERNAL_DRAIN | STATUS_INTERNAL_PLAYING);
 			m_curaddress = m_regs.external() ? (m_regs.start() << address_shift()) : 0;
-			m_buffer = 0;
+			m_buffer = (m_regs.cpudata() << 24) | (m_regs.cpudata() << 16);
 			m_nibbles = 4;
 			m_position = 0;
 			m_accumulator = 0;
@@ -654,6 +654,14 @@ void adpcm_b_channel::write(uint32_t regnum, uint8_t value)
 						m_regs.limit());
 			}
 		}
+	}
+
+	// register 2-3 writes update the current address if configured for external
+	else if ((regnum & ~1) == 2 && m_regs.external())
+	{
+		m_curaddress = m_regs.start() << address_shift();
+		m_buffer = (m_regs.cpudata() << 24) | (m_regs.cpudata() << 16);
+		m_nibbles = 4;
 	}
 
 	// register 8 writes over the bus under some conditions

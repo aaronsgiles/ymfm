@@ -338,6 +338,9 @@ public:
 	// return the status register
 	uint8_t status() const { return m_status & STATUS_EXTERNAL; }
 
+	// clear bits in the status register
+	void clear_status(uint8_t status) { m_status &= ~(status & STATUS_EXTERNAL); }
+
 	// handle special register reads
 	uint8_t read(uint32_t regnum);
 
@@ -402,6 +405,7 @@ public:
 
 	// status
 	uint8_t status() const { return m_channel->status(); }
+	void clear_status(uint8_t status) { m_channel->clear_status(status); }
 
 	// return a reference to our interface
 	ymfm_interface &intf() { return m_intf; }
