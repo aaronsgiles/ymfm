@@ -464,9 +464,8 @@ void adpcm_b_channel::clock()
 	// if we have nibbles available, process them
 	if (m_nibbles != 0)
 	{
-		uint8_t data = uint8_t(m_buffer >> 28);
-		m_buffer <<= 4;
-		m_nibbles--;
+		// fetch the next nibble
+		uint8_t data = consume_nibbles(1);
 
 		// forecast to next forecast: 1/8, 3/8, 5/8, 7/8, 9/8, 11/8, 13/8, 15/8
 		int32_t delta = (2 * bitfield(data, 0, 3) + 1) * m_adpcm_step / 8;
@@ -508,8 +507,7 @@ void adpcm_b_channel::clock()
 		if (request_data())
 		{
 			// the final 3 samples are not played; chop them from the stream
-			m_nibbles -= 3;
-			m_buffer &= 0xffffffff << (32 - 4 * m_nibbles);
+			consume_nibbles(3);
 
 			// this should always end up as 1; the logic above assumes we will hit
 			// 0 nibbles after processing the next one
@@ -517,7 +515,7 @@ void adpcm_b_channel::clock()
 
 			// if repeating, set the current address back to start for next fetch
 			if (m_regs.repeat())
-				m_curaddress = m_regs.external() ? (m_regs.start() << address_shift()) : 0;
+				latch_addresses();
 		}
 	}
 }
@@ -560,34 +558,38 @@ uint8_t adpcm_b_channel::read(uint32_t regnum)
 	// register 8 reads over the bus under some conditions
 	if (regnum == 0x08 && !m_regs.execute() && !m_regs.record() && m_regs.external())
 	{
-		// if we have the nibbles, return them
-		if (m_nibbles >= 2)
+		// if this is the first read, insert two copies of the cpudata into the buffer;
+		// the address will be latched in request_data
+		if (m_curaddress == LATCH_ADDRESS)
 		{
-			result = uint8_t(m_buffer >> 24);
-			m_buffer <<= 8;
-			m_nibbles -= 2;
-			set_reset_status(STATUS_BRDY);
+			set_reset_status(0, STATUS_INTERNAL_DRAIN);
+			append_buffer_byte(m_regs.cpudata());
+			append_buffer_byte(m_regs.cpudata());
 		}
 
-		// if we're draining due to hitting the stop address, check for restarts
+		// if we have the nibbles, return them
+		result = consume_nibbles(2);
+		set_reset_status(STATUS_BRDY);
+
+		// if we previously hit the end and we're draining, see if we're out
 		if ((m_status & STATUS_INTERNAL_DRAIN) != 0)
 		{
 			// if we run out of nibbles, mark end of sample and reset the address
 			if (m_nibbles == 0)
 			{
-				m_curaddress = m_regs.start() << address_shift();
 				set_reset_status(STATUS_EOS, STATUS_INTERNAL_DRAIN);
 
 				// if repeating, add one dummy sample and issue a fetch of the first byte
 				if (m_regs.repeat())
 				{
-					m_nibbles += 2;
+					append_buffer_byte(m_regs.cpudata());
+					m_curaddress = m_regs.start() << address_shift();
 					request_data();
 				}
 
-				// otherwise, add two dummy samples
+				// otherwise, reset the address
 				else
-					m_nibbles += 4;
+					m_curaddress = LATCH_ADDRESS;
 			}
 		}
 
@@ -619,20 +621,22 @@ void adpcm_b_channel::write(uint32_t regnum, uint8_t value)
 		{
 			// initialize the core state; appears to leave EOS flag alone until next execute
 			set_reset_status(STATUS_BRDY, STATUS_PLAYING | STATUS_INTERNAL_DRAIN | STATUS_INTERNAL_PLAYING);
-			m_curaddress = m_regs.external() ? (m_regs.start() << address_shift()) : 0;
-			m_buffer = (m_regs.cpudata() << 24) | (m_regs.cpudata() << 16);
-			m_nibbles = 4;
+
+			// flag the address to be latched at the next access; this is necessary
+			// beacuse it is allowed to program the start/stop addresses after this
+			// command byte is written
+			m_curaddress = LATCH_ADDRESS;
+			m_buffer = 0;
+			m_nibbles = 0;
 			m_position = 0;
 			m_accumulator = 0;
 			m_adpcm_step = STEP_MIN;
 			m_output = 0;
-			m_prev_output = 0;
 
 			// if playing, set the playing status
 			if (m_regs.execute())
 			{
 				set_reset_status(STATUS_PLAYING | STATUS_INTERNAL_PLAYING, STATUS_EOS);
-				m_nibbles = 0;
 
 				// don't log masked channels
 				if ((debug::GLOBAL_ADPCM_B_CHANNEL_MASK & 1) != 0)
@@ -656,32 +660,41 @@ void adpcm_b_channel::write(uint32_t regnum, uint8_t value)
 		}
 	}
 
-	// register 2-3 writes update the current address if configured for external
-	else if ((regnum & ~1) == 2 && m_regs.external())
-	{
-		m_curaddress = m_regs.start() << address_shift();
-		m_buffer = (m_regs.cpudata() << 24) | (m_regs.cpudata() << 16);
-		m_nibbles = 4;
-	}
-
 	// register 8 writes over the bus under some conditions
 	else if (regnum == 0x08)
 	{
-		// if writing from the CPU during execute, clear the ready flag
-		if (m_regs.execute() && !m_regs.record() && !m_regs.external())
-			set_reset_status(0, STATUS_BRDY);
-
-		// if writing during "record", pass through as data
-		else if (!m_regs.execute() && m_regs.record() && m_regs.external())
+		// writing during execute
+		if (m_regs.execute())
 		{
+			// if writing from the CPU during execute, clear the ready flag; data will be picked
+			// up on next fetch
+			if (!m_regs.record() && !m_regs.external())
+				set_reset_status(0, STATUS_BRDY);
+		}
+
+		// if writing to external data, process record mode, which writes data to RAM
+		else if (m_regs.external() && m_regs.record())
+		{
+			// latch the current address if this is the first write
+			if (m_curaddress == LATCH_ADDRESS)
+				latch_addresses();
+
 			// write the data
 			m_owner.intf().ymfm_external_write(ACCESS_ADPCM_B, m_curaddress, value);
 			set_reset_status(STATUS_BRDY);
 
-			// advance
+			// advance; if we hit the end, signal EOS and put ourselves back in the latching state
 			if (advance_address())
+			{
 				set_reset_status(STATUS_EOS);
+				m_curaddress = LATCH_ADDRESS;
+			}
 		}
+
+		// writes in external non-record mode appear to behave like a read in that
+		// it will advance the address and consume a nibble
+		else if (m_regs.external())
+			read(0x08);
 	}
 }
 
@@ -720,6 +733,9 @@ bool adpcm_b_channel::advance_address()
 	auto shift = address_shift();
 	auto mask = (1 << shift) - 1;
 
+	// should never get here with an uninitialized current address
+	assert(m_curaddress != LATCH_ADDRESS);
+
 	// if at the end of a unit, check for end/limit
 	if ((m_curaddress & mask) == mask)
 	{
@@ -728,7 +744,7 @@ bool adpcm_b_channel::advance_address()
 		if (unitaddr == m_regs.end())
 			return true;
 
-		// wrap at the limit address
+		// wrap at the limit address; this does not report any status
 		else if (unitaddr == m_regs.limit())
 		{
 			m_curaddress = 0;
@@ -744,29 +760,33 @@ bool adpcm_b_channel::advance_address()
 
 //-------------------------------------------------
 //  request_data - request another byte of data
-//  for the buffer
+//  for the buffer; used by both playback and
+//  data reading code
 //-------------------------------------------------
 
 bool adpcm_b_channel::request_data()
 {
+	// pick up the current address if this is the first read
+	if (m_curaddress == LATCH_ADDRESS)
+		latch_addresses();
+
 	// if CPU-driven, just set the flag and return true
 	if (!m_regs.external())
 	{
 		// if data was written, consume it
 		if ((m_status & STATUS_BRDY) == 0)
-		{
-			m_buffer |= m_regs.cpudata() << (24 - 4 * m_nibbles);
-			m_nibbles += 2;
-		}
+			append_buffer_byte(m_regs.cpudata());
 		set_reset_status(STATUS_BRDY);
 		return false;
 	}
 
-	// append the new byte to our buffer
-	m_buffer |= m_owner.intf().ymfm_external_read(ACCESS_ADPCM_B, m_curaddress) << (24 - 4 * m_nibbles);
-	m_nibbles += 2;
+	// append the new byte to our buffer; also write to the cpudata register to match
+	// behavior of dummy reads from real chip
+	uint8_t data = m_owner.intf().ymfm_external_read(ACCESS_ADPCM_B, m_curaddress);
+	append_buffer_byte(data);
+	m_regs.write(0x08, data);
 
-	// advance the address; if we hit the end, stop playback and return false
+	// advance the address, returning true if we hit the end
 	return advance_address();
 }
 
