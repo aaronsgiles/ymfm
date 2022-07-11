@@ -303,6 +303,8 @@ class adpcm_b_channel
 	static constexpr int32_t STEP_MIN = 127;
 	static constexpr int32_t STEP_MAX = 24576;
 
+	static constexpr uint32_t LATCH_ADDRESS = 0xffffffff;
+
 public:
 	// publicly visible status bits
 	static constexpr uint32_t STATUS_EOS = 0x01;
@@ -359,6 +361,25 @@ private:
 
 	// request the next byte of data
 	bool request_data();
+
+	// latch the current address
+	void latch_addresses() { m_curaddress = m_regs.external() ? (m_regs.start() << address_shift()) : 0; }
+
+	// append a byte to our internal buffer
+	void append_buffer_byte(uint8_t data)
+	{
+		m_buffer |= data << (24 - 4 * m_nibbles);
+		m_nibbles += 2;
+	}
+
+	// consume the requested number of nibbles from the buffer
+	uint32_t consume_nibbles(uint8_t count)
+	{
+		uint32_t result = m_buffer >> (32 - 4 * count);
+		m_buffer <<= 4 * count;
+		m_nibbles = (m_nibbles > count) ? (m_nibbles - count) : 0;
+		return result;
+	}
 
 	// internal state
 	uint32_t const m_address_shift;     // address bits shift-left
