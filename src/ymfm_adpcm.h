@@ -265,6 +265,7 @@ public:
 	void save_restore(ymfm_saved_state &state);
 
 	// direct read/write access
+	uint8_t read(uint32_t index) const { return m_regdata[index]; }
 	void write(uint32_t index, uint8_t data) { m_regdata[index] = data; }
 
 	// system-wide registers
