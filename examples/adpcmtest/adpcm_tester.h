@@ -18,6 +18,7 @@ public:
     adpcm_tester() :
         m_chip(*this)
     {
+		reset();
     }
 
     adpcm_tester &out(uint16_t reg, uint8_t data)

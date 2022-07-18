@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
 
     rs.seq_mem_limit(0xffff);
     rs.reset();
-    rs.seq_mem_write(0x0000, 0x0000, 0x00, 32, "1. WRITE ADDRESS 0000-0000 (00-1F)");
+	test_mem_write(rs, 0x0000, 0x0000, 0x00, 32, "1. WRITE ADDRESS 0000-0000 (00-1F)");
 
     int testno = 2;
     for (int i = 0; i < 4; i++)
