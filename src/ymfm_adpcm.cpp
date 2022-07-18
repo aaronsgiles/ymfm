@@ -558,13 +558,13 @@ uint8_t adpcm_b_channel::read(uint32_t regnum)
 	// register 8 reads over the bus under some conditions
 	if (regnum == 0x08 && !m_regs.execute() && !m_regs.record() && m_regs.external())
 	{
-		// if this is the first read, insert two copies of the cpudata into the buffer;
-		// the address will be latched in request_data
+		// if this is the first read, ensure there is at least 2 bytes of data available,
+		// padding with the cpudata register if needed
 		if (m_curaddress == LATCH_ADDRESS)
 		{
 			set_reset_status(0, STATUS_INTERNAL_DRAIN);
-			append_buffer_byte(m_regs.cpudata());
-			append_buffer_byte(m_regs.cpudata());
+			while (m_nibbles < 4)
+				append_buffer_byte(m_regs.cpudata());
 		}
 
 		// if we have the nibbles, return them
@@ -623,19 +623,20 @@ void adpcm_b_channel::write(uint32_t regnum, uint8_t value)
 			set_reset_status(STATUS_BRDY, STATUS_PLAYING | STATUS_INTERNAL_DRAIN | STATUS_INTERNAL_PLAYING);
 
 			// flag the address to be latched at the next access; this is necessary
-			// beacuse it is allowed to program the start/stop addresses after this
+			// because it is allowed to program the start/stop addresses after this
 			// command byte is written
 			m_curaddress = LATCH_ADDRESS;
-			m_buffer = 0;
-			m_nibbles = 0;
-			m_position = 0;
-			m_accumulator = 0;
-			m_adpcm_step = STEP_MIN;
-			m_output = 0;
 
 			// if playing, set the playing status
 			if (m_regs.execute())
 			{
+				m_buffer = 0;
+				m_nibbles = 0;
+				m_position = 0;
+				m_accumulator = 0;
+				m_adpcm_step = STEP_MIN;
+				m_output = 0;
+
 				set_reset_status(STATUS_PLAYING | STATUS_INTERNAL_PLAYING, STATUS_EOS);
 
 				// don't log masked channels
