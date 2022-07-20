@@ -685,19 +685,21 @@ void adpcm_b_channel::write(uint32_t regnum, uint8_t value)
 			set_reset_status(STATUS_BRDY);
 
 			// advance; if we hit the end, signal EOS and put ourselves back in the latching state
-			// also turn off record mode, as subsequent writes are ignored
 			if (advance_address())
 			{
 				set_reset_status(STATUS_EOS);
 				m_curaddress = LATCH_ADDRESS;
-				m_regs.write(0x00, m_regs.read(0x00) & ~0x40);
+
+				// in the repeat case, also turn off record mode, as subsequent writes are ignored
+				if (m_regs.repeat())
+					m_regs.write(0x00, m_regs.read(0x00) & ~0x40);
 			}
 		}
 
 		// writes in external non-record mode appear to behave like a read in that it will advance
 		// the address and consume a nibble, but the last written value will still be present; note
 		// that this code runs even after the end of a normal write that sets the EOS bit
-		if (m_regs.external())
+		if (m_regs.external() && !m_regs.record())
 		{
 			// reset the buffer to 4 nibbles with 0 and the value written, then trigger a read
 			// which will consume the 0 and clock in the next byte, leaving the value written
