@@ -39,7 +39,7 @@ public:
 
     adpcm_tester &stat()
     {
-        printf("S%02X ", m_chip.read_status_hi());
+        printf("S%02X    ", m_chip.read_status_hi());
         return *this;
     }
 
