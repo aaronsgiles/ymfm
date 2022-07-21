@@ -317,6 +317,7 @@ private:
 	static constexpr uint32_t STATUS_EXTERNAL = STATUS_EOS | STATUS_BRDY | STATUS_PLAYING;
 	static constexpr uint32_t STATUS_INTERNAL_DRAIN = 0x08;
 	static constexpr uint32_t STATUS_INTERNAL_PLAYING = 0x10;
+	static constexpr uint32_t STATUS_INTERNAL_SUPPRESS_WRITE = 0x20;
 
 public:
 	// constructor
@@ -362,6 +363,12 @@ private:
 
 	// request the next byte of data
 	bool request_data();
+
+	// perform a read cycle from RAM/ROM
+	uint8_t read_ram();
+
+	// perform a write cycle to RAM
+	void write_ram(uint8_t value);
 
 	// latch the current address
 	void latch_addresses() { m_curaddress = m_regs.external() ? (m_regs.start() << address_shift()) : 0; }

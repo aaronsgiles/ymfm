@@ -557,46 +557,8 @@ uint8_t adpcm_b_channel::read(uint32_t regnum)
 
 	// register 8 reads over the bus under some conditions
 	if (regnum == 0x08 && !m_regs.execute() && !m_regs.record() && m_regs.external())
-	{
-		// if this is the first read, ensure there is at least 2 bytes of data available,
-		// padding with the cpudata register if needed
-		if (m_curaddress == LATCH_ADDRESS)
-		{
-			set_reset_status(0, STATUS_INTERNAL_DRAIN);
-			while (m_nibbles < 4)
-				append_buffer_byte(m_regs.cpudata());
-		}
+		result = read_ram();
 
-		// if we have the nibbles, return them
-		result = consume_nibbles(2);
-		set_reset_status(STATUS_BRDY);
-
-		// if we previously hit the end and we're draining, see if we're out
-		if ((m_status & STATUS_INTERNAL_DRAIN) != 0)
-		{
-			// if we run out of nibbles, mark end of sample and reset the address
-			if (m_nibbles == 0)
-			{
-				set_reset_status(STATUS_EOS, STATUS_INTERNAL_DRAIN);
-
-				// if repeating, add one dummy sample and issue a fetch of the first byte
-				if (m_regs.repeat())
-				{
-					append_buffer_byte(m_regs.cpudata());
-					m_curaddress = m_regs.start() << address_shift();
-					request_data();
-				}
-
-				// otherwise, reset the address
-				else
-					m_curaddress = LATCH_ADDRESS;
-			}
-		}
-
-		// if not draining, then request more data and start draining if we hit the end
-		else if (request_data())
-			set_reset_status(STATUS_INTERNAL_DRAIN);
-	}
 	return result;
 }
 
@@ -620,7 +582,7 @@ void adpcm_b_channel::write(uint32_t regnum, uint8_t value)
 		else
 		{
 			// initialize the core state; appears to leave EOS flag alone until next execute
-			set_reset_status(STATUS_BRDY, STATUS_PLAYING | STATUS_INTERNAL_DRAIN | STATUS_INTERNAL_PLAYING);
+			set_reset_status(STATUS_BRDY, STATUS_PLAYING | STATUS_INTERNAL_DRAIN | STATUS_INTERNAL_PLAYING | STATUS_INTERNAL_SUPPRESS_WRITE);
 
 			// flag the address to be latched at the next access; this is necessary
 			// because it is allowed to program the start/stop addresses after this
@@ -675,39 +637,12 @@ void adpcm_b_channel::write(uint32_t regnum, uint8_t value)
 
 		// if writing to external data, process record mode, which writes data to RAM
 		else if (m_regs.external() && m_regs.record())
-		{
-			// latch the current address if this is the first write
-			if (m_curaddress == LATCH_ADDRESS)
-				latch_addresses();
-
-			// write the data
-			m_owner.intf().ymfm_external_write(ACCESS_ADPCM_B, m_curaddress, value);
-			set_reset_status(STATUS_BRDY);
-
-			// advance; if we hit the end, signal EOS and put ourselves back in the latching state
-			if (advance_address())
-			{
-				set_reset_status(STATUS_EOS);
-				m_curaddress = LATCH_ADDRESS;
-
-				// in the repeat case, also turn off record mode, as subsequent writes are ignored
-				if (m_regs.repeat())
-					m_regs.write(0x00, m_regs.read(0x00) & ~0x40);
-			}
-		}
+			write_ram(value);
 
 		// writes in external non-record mode appear to behave like a read in that it will advance
-		// the address and consume a nibble, but the last written value will still be present; note
-		// that this code runs even after the end of a normal write that sets the EOS bit
-		if (m_regs.external() && !m_regs.record())
-		{
-			// reset the buffer to 4 nibbles with 0 and the value written, then trigger a read
-			// which will consume the 0 and clock in the next byte, leaving the value written
-			// as the next byte to consume
-			m_buffer = value << 16;
-			m_nibbles = 4;
-			read(0x08);
-		}
+		// the address and consume a nibble, but the last written value will still be present
+		else
+			read_ram();
 	}
 }
 
@@ -801,6 +736,98 @@ bool adpcm_b_channel::request_data()
 
 	// advance the address, returning true if we hit the end
 	return advance_address();
+}
+
+
+//-------------------------------------------------
+//  read_ram - perform a read cycle from RAM/ROM
+//-------------------------------------------------
+
+uint8_t adpcm_b_channel::read_ram()
+{
+	// if this is the first read, ensure there is at least 2 bytes of data available,
+	// padding with the cpudata register if needed
+	if (m_curaddress == LATCH_ADDRESS)
+	{
+		set_reset_status(0, STATUS_INTERNAL_DRAIN);
+		while (m_nibbles < 4)
+			append_buffer_byte(m_regs.cpudata());
+	}
+
+	// if we have the nibbles, return them
+	uint8_t result = consume_nibbles(2);
+	set_reset_status(STATUS_BRDY);
+
+	// if we previously hit the end and we're draining, see if we're out
+	if ((m_status & STATUS_INTERNAL_DRAIN) != 0)
+	{
+		// if we run out of nibbles, mark end of sample and reset the address
+		if (m_nibbles == 0)
+		{
+			set_reset_status(STATUS_EOS, STATUS_INTERNAL_DRAIN);
+
+			// if repeating, add one dummy sample and issue a fetch of the first byte
+			if (m_regs.repeat())
+			{
+				append_buffer_byte(m_regs.cpudata());
+				m_curaddress = m_regs.start() << address_shift();
+				request_data();
+			}
+
+			// otherwise, reset the address
+			else
+				m_curaddress = LATCH_ADDRESS;
+		}
+	}
+
+	// if not draining, then request more data and start draining if we hit the end
+	else if (request_data())
+		set_reset_status(STATUS_INTERNAL_DRAIN);
+
+	return result;
+}
+
+
+//-------------------------------------------------
+//  write_ram - perform a write cycle to RAM
+//-------------------------------------------------
+
+void adpcm_b_channel::write_ram(uint8_t value)
+{
+	// normal write case, unsuppressed
+	if ((m_status & STATUS_INTERNAL_SUPPRESS_WRITE) == 0)
+	{
+		// latch the current address if this is the first write
+		if (m_curaddress == LATCH_ADDRESS)
+			latch_addresses();
+
+		// write the data
+		m_owner.intf().ymfm_external_write(ACCESS_ADPCM_B, m_curaddress, value);
+		set_reset_status(STATUS_BRDY);
+
+		// advance; if we hit the end, signal EOS and put ourselves back in the latching state
+		if (advance_address())
+		{
+			set_reset_status(STATUS_EOS);
+			m_curaddress = LATCH_ADDRESS;
+
+			// in the repeat case, suppress further writes
+			if (m_regs.repeat())
+				set_reset_status(STATUS_INTERNAL_SUPPRESS_WRITE);
+		}
+	}
+
+	// suppressed writes after reaching stop address in repeat mode; note that this runs
+	// immediately after the EOS condition above, as well as on subsequent writes
+	if ((m_status & STATUS_INTERNAL_SUPPRESS_WRITE) != 0)
+	{
+		// reset the buffer to 4 nibbles with 0 and the value written, then trigger a read
+		// cycle which will consume the 0 and clock in the next byte, leaving the value
+		// written as the next byte to consume
+		m_buffer = value << 16;
+		m_nibbles = 4;
+		read_ram();
+	}
 }
 
 
