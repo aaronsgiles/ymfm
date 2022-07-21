@@ -19,6 +19,7 @@ public:
         m_chip(*this)
     {
 		reset();
+		memset(&m_memory[0], 0x80, sizeof(m_memory));
     }
 
     adpcm_tester &out(uint16_t reg, uint8_t data)
