@@ -680,6 +680,10 @@ uint8_t pcm_engine::read(uint32_t regnum)
 	if (regnum == 0x06 && m_regs.memory_access_mode() != 0)
 		return m_intf.ymfm_external_read(ACCESS_PCM, m_regs.memory_address_autoinc());
 
+	// always return register 0x02 with YMF278B device ID set.
+	if (regnum == 0x02)
+		return m_regs.read(regnum) | 0x20;
+
 	return m_regs.read(regnum);
 }
 
