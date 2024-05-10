@@ -408,10 +408,16 @@ std::string opn_registers_base<IsOpnA>::log_keyon(uint32_t choffs, uint32_t opof
 			block_freq = multi_block_freq(0);
 	}
 
+	
 	char buffer[256];
 	char *end = &buffer[0];
 
-	end += sprintf(end, "%u.%02u freq=%04X dt=%u fb=%u alg=%X mul=%X tl=%02X ksr=%u adsr=%02X/%02X/%02X/%X sl=%X",
+	char *buffend = &buffer[255];
+	size_t dif = buffend - end;
+	size_t written;
+	
+	// return value of snprintf can be larger than max_size. 
+	written = snprintf(end, dif, "%u.%02u freq=%04X dt=%u fb=%u alg=%X mul=%X tl=%02X ksr=%u adsr=%02X/%02X/%02X/%X sl=%X",
 		chnum, opnum,
 		block_freq,
 		op_detune(opoffs),
@@ -425,27 +431,55 @@ std::string opn_registers_base<IsOpnA>::log_keyon(uint32_t choffs, uint32_t opof
 		op_sustain_rate(opoffs),
 		op_release_rate(opoffs),
 		op_sustain_level(opoffs));
+	
+	if (written > dif) written = dif; // Get smaller of two values: buffer size limit OR bytes "wanted to write"
+	end += written;			// Increase pointer 
+	dif = buffend - end; 	// 256 - written = new difference
 
 	if (OUTPUTS > 1)
-		end += sprintf(end, " out=%c%c",
+		written += snprintf(end, dif, " out=%c%c",
 			ch_output_0(choffs) ? 'L' : '-',
 			ch_output_1(choffs) ? 'R' : '-');
+
+	if (written > dif) written = dif;
+	end += written;
+	dif = buffend - end;
+
 	if (op_ssg_eg_enable(opoffs))
-		end += sprintf(end, " ssg=%X", op_ssg_eg_mode(opoffs));
+		written += snprintf(end, dif, " ssg=%X", op_ssg_eg_mode(opoffs));
+	
+	if (written > dif) written = dif;
+	end += written;
+	dif = buffend - end;
+
 	bool am = (op_lfo_am_enable(opoffs) && ch_lfo_am_sens(choffs) != 0);
 	if (am)
-		end += sprintf(end, " am=%u", ch_lfo_am_sens(choffs));
+		written += snprintf(end, dif, " am=%u", ch_lfo_am_sens(choffs));
+	
+	if (written > dif) written = dif;
+	end += written;
+	dif = buffend - end;
+
 	bool pm = (ch_lfo_pm_sens(choffs) != 0);
 	if (pm)
-		end += sprintf(end, " pm=%u", ch_lfo_pm_sens(choffs));
+		written += snprintf(end, dif, " pm=%u", ch_lfo_pm_sens(choffs));
+	
+	if (written > dif) written = dif;
+	end += written;
+	dif = buffend - end;
+
 	if (am || pm)
-		end += sprintf(end, " lfo=%02X", lfo_rate());
+		written += snprintf(end, dif, " lfo=%02X", lfo_rate());
+	
+	if (written > dif) written = dif;
+	end += written;
+	dif = buffend - end;
+
 	if (multi_freq() && choffs == 2)
-		end += sprintf(end, " multi=1");
+		written += snprintf(end, dif, " multi=1");
 
 	return buffer;
 }
-
 
 
 //*********************************************************
