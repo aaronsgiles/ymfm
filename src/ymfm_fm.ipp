@@ -1504,6 +1504,8 @@ void fm_engine_base<RegisterType>::update_timer(uint32_t tnum, uint32_t enable, 
 template<class RegisterType>
 void fm_engine_base<RegisterType>::engine_timer_expired(uint32_t tnum)
 {
+	assert(tnum == 0 || tnum == 1);
+
 	// update status
 	if (tnum == 0 && m_regs.enable_timer_a())
 		set_reset_status(STATUS_TIMERA, 0);
