@@ -330,7 +330,7 @@ uint32_t opm_registers::compute_phase_step(uint32_t choffs, uint32_t opoffs, opd
 		if (pm_sensitivity < 6)
 			delta += lfo_raw_pm >> (6 - pm_sensitivity);
 		else
-			delta += lfo_raw_pm << (pm_sensitivity - 5);
+			delta += uint32_t(lfo_raw_pm) << (pm_sensitivity - 5);
 	}
 
 	// apply delta and convert to a frequency number
