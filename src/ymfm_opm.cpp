@@ -60,17 +60,17 @@ opm_registers::opm_registers() :
 	{
 		// waveform 0 is a sawtooth
 		uint8_t am = index ^ 0xff;
-		int8_t pm = int8_t(index);
+		uint8_t pm = index;
 		m_lfo_waveform[0][index] = am | (pm << 8);
 
 		// waveform 1 is a square wave
 		am = bitfield(index, 7) ? 0 : 0xff;
-		pm = int8_t(am ^ 0x80);
+		pm = am ^ 0x80;
 		m_lfo_waveform[1][index] = am | (pm << 8);
 
 		// waveform 2 is a triangle wave
 		am = bitfield(index, 7) ? (index << 1) : ((index ^ 0xff) << 1);
-		pm = int8_t(bitfield(index, 6) ? am : ~am);
+		pm = bitfield(index, 6) ? am : ~am;
 		m_lfo_waveform[2][index] = am | (pm << 8);
 
 		// waveform 3 is noise; it is filled in dynamically
