@@ -56,7 +56,7 @@ public:
 
 		// generate
 		typename ChipType::output_data output[20];
-		m_chip.generate(&output[0], ymfm::array_size(output));
+		m_chip.generate(&output[0], sizeof(output) / sizeof(output[0]));
 	}
 
 private:
