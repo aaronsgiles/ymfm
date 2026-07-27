@@ -686,7 +686,7 @@ class ymf289b
 public:
 	using fm_engine = fm_engine_base<opl3_registers>;
 	using output_data = fm_engine::output_data;
-	static constexpr uint32_t OUTPUTS = 2;
+	static constexpr uint32_t OUTPUTS = fm_engine::OUTPUTS;
 
 	// constructor
 	ymf289b(ymfm_interface &intf);
